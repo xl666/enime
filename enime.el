@@ -49,3 +49,26 @@ A candidate is a list of id title img-src"
 		,(enime-get-anime-title-from-node node)
 		,(enime-get-anime-img-src-from-node node)))
 	    (esxml-query-all "div>a[href^=\"/category/\"]" tree))))
+
+(defun enime-get-min-episode (tree)
+  "Returns the first episode found from a parse treee"
+  (xml-get-attribute (car (esxml-query-all "#episode_page li a" tree)) 'ep_start))
+
+(defun enime-get-max-episode (tree)
+  "Returns the last episode found from a parse treee"
+  (xml-get-attribute (car (last (esxml-query-all "#episode_page li a" tree))) 'ep_end))
+
+(defun enime-episodes-range (anime-id)
+  "Returns a numeric range (inclusive in both sides) of the first
+and last episode availabe"
+  (let* ((uri (concat "/category/" anime-id))
+	 (url (concat enime-base-url uri))
+	 (tree
+	  (enime-return-parsing-tree-from-request url nil))
+	 (first-ep (enime-get-min-episode tree))
+	 (last-ep (enime-get-max-episode tree)))
+    (if (= (string-to-number first-ep) 0)
+	`("1" ,last-ep)
+      `(,first-ep ,last-ep))))
+
+
