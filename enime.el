@@ -71,4 +71,15 @@ and last episode availabe"
 	`("1" ,last-ep)
       `(,first-ep ,last-ep))))
 
-
+(defun enime-get-embedded-video-link (anime-id episode &optional dub)
+  "Returns the url of video asociated to anime episode
+optional parameter if the anime supports dub version"
+  (let* ((uri (if dub  (concat "/" anime-id "-dub" "-episode-" episode)
+		(concat "/" anime-id "-episode-" episode)))
+	 (url (concat enime-base-url uri))
+	 (tree
+	  (enime-return-parsing-tree-from-request url nil))	 
+	 )
+    (concat "https:"
+	    (xml-get-attribute
+	     (car (esxml-query-all "a[rel=\"100\"]" tree)) 'data-video))))
