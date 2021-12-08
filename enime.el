@@ -16,6 +16,21 @@
       :error (setf result nil))
     result))
 
+(defun enime-return-raw-text-from-request (url &optional params)
+  "Makes a request and returns the obtained string without parsing,
+useful for regexp"
+  (let ((result nil))
+    (request url
+      :params params
+      :sync t
+      :parser
+      'buffer-string
+      :success
+      (cl-function (lambda (&key data &allow-other-keys)
+                     (setf result data)))
+      :error (setf result nil))
+    result))
+
 (defun enime-get-anime-title-from-node (node)
   "Returns the anime title from a node"
   (xml-get-attribute node 'title))
@@ -83,3 +98,13 @@ optional parameter if the anime supports dub version"
     (concat "https:"
 	    (xml-get-attribute
 	     (car (esxml-query-all "a[rel=\"100\"]" tree)) 'data-video))))
+
+
+(defun enime-get-video-url (embedded-url)
+  "Returns video url from embedded url"
+  (let* ((text (enime-return-raw-text-from-request embedded-url nil))
+	 (prev (string-match "sources:\\[{file: '\\([^']+\\)" text))
+	 (beginning (match-beginning 1))
+	 (end (match-end 1)))
+    (substring texto beginning end)))
+
