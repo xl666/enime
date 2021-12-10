@@ -123,11 +123,34 @@ optional parameter if the anime supports dub version"
 	    positions))
   )
 
+(defun enime-set-quality (video-file desired-quality)
+  "cheks if the desired quality is available, if not it returns the
+higuer quality"
+  (let* ((qualities (enime-get-available-qualities video-file)))
+    (if (member desired-quality qualities)
+	desired-quality
+      (car (last qualities)))))
 
-(let* ((embedded (enime-get-embedded-video-link "one-piece" "1"))
-       (video-url (enime-get-video-url embedded))
-       (video-file (enime-get-video-file-details embedded video-url)))
-  (enime-get-available-qualities video-file)
-					;(shell-command (concat "curl -s --referer '" embedded "' '" video-url "'"))
-  ;(shell-command (concat "curl -s -H 'referer: " embedded "' '" video-url "'"))
+(defun enime-get-links (embedded-url desired-quality)
+  "Returns a video url with cuality, tries to get video with
+desired quality, if not available gets the higher quality"
+  (let* ((video-url (enime-get-video-url embedded-url))
+	 (video-file (enime-get-video-file-details embedded-url video-url))
+	 (quality (enime-set-quality video-file desired-quality))
+					; maybe get the tmp url?
+	 )
+    (if quality
+	(concat (substring video-url 0 -4) quality ".m3u8")
+      video-url) ;; some videos do not have quality info
+    ))
+
+(let* ((embedded (enime-get-embedded-video-link "dragon-quest-dai-no-daibouken-2020" "60"))
+       (video-url (enime-get-links embedded "1080")))
+  (make-process
+   :name "mpv-enime"
+   :command `("mpv" ,(concat "--http-header-fields=Referer: " embedded)
+	      ,video-url))
+					;(format "mpv --http-header-fields=\"Referer: %s\" \"%s\"" embedded video-url)
+
   )
+
