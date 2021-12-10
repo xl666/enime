@@ -16,12 +16,13 @@
       :error (setf result nil))
     result))
 
-(defun enime-return-raw-text-from-request (url &optional params)
+(defun enime-return-raw-text-from-request (url &optional headers params)
   "Makes a request and returns the obtained string without parsing,
 useful for regexp"
   (let ((result nil))
     (request url
       :params params
+      :headers headers
       :sync t
       :parser
       'buffer-string
@@ -102,9 +103,31 @@ optional parameter if the anime supports dub version"
 
 (defun enime-get-video-url (embedded-url)
   "Returns video url from embedded url"
-  (let* ((text (enime-return-raw-text-from-request embedded-url nil))
+  (let* ((text (enime-return-raw-text-from-request embedded-url))
 	 (prev (string-match "sources:\\[{file: '\\([^']+\\)" text))
 	 (beginning (match-beginning 1))
 	 (end (match-end 1)))
-    (substring texto beginning end)))
+    (substring text beginning end)))
 
+(defun enime-get-video-file-details (embedded-url video-url)
+  "Gets the actual video file"
+  (let ((request-curl-options `(,(format "--referer %s" embedded-url))))
+    (enime-return-raw-text-from-request
+     video-url)))
+
+(defun enime-get-available-qualities (video-file)
+  "Returns a list of available video qualities from video file details"
+  (let* ((positions (s-matched-positions-all "Name=\"\\([0-9]+\\)" video-file)))
+    (mapcar (lambda (pair)
+	      (substring video-file (+ 6 (car pair)) (cdr pair))) ;; +6 to get ride of NAME=\"
+	    positions))
+  )
+
+
+(let* ((embedded (enime-get-embedded-video-link "one-piece" "1"))
+       (video-url (enime-get-video-url embedded))
+       (video-file (enime-get-video-file-details embedded video-url)))
+  (enime-get-available-qualities video-file)
+					;(shell-command (concat "curl -s --referer '" embedded "' '" video-url "'"))
+  ;(shell-command (concat "curl -s -H 'referer: " embedded "' '" video-url "'"))
+  )
