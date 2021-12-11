@@ -117,10 +117,11 @@ optional parameter if the anime supports dub version"
 
 (defun enime-get-available-qualities (video-file)
   "Returns a list of available video qualities from video file details"
-  (let* ((positions (s-matched-positions-all "Name=\"\\([0-9]+\\)" video-file)))
-    (mapcar (lambda (pair)
-	      (substring video-file (+ 6 (car pair)) (cdr pair))) ;; +6 to get ride of NAME=\"
-	    positions))
+  (when video-file
+    (let* ((positions (s-matched-positions-all "Name=\"\\([0-9]+\\)" video-file)))
+      (mapcar (lambda (pair)
+		(substring video-file (+ 6 (car pair)) (cdr pair))) ;; +6 to get ride of NAME=\"
+	      positions)))
   )
 
 (defun enime-set-quality (video-file desired-quality)
@@ -144,13 +145,18 @@ desired quality, if not available gets the higher quality"
       video-url) ;; some videos do not have quality info
     ))
 
-(let* ((embedded (enime-get-embedded-video-link "dragon-quest-dai-no-daibouken-2020" "60"))
-       (video-url (enime-get-links embedded "1080")))
-  (make-process
-   :name "mpv-enime"
-   :command `("mpv" ,(concat "--http-header-fields=Referer: " embedded)
-	      ,video-url))
-					;(format "mpv --http-header-fields=\"Referer: %s\" \"%s\"" embedded video-url)
+(defun enime-play-episode (anime-id episode desired-quality)
+  "Opens an anime episode in mpv, it also checks if the episode is
+in the range of available episodes "
+  (let ((episodes-range (enime-episodes-range anime-id)))
+    (when (and (>= (string-to-number episode) (string-to-number (car episodes-range)))
+	       (<= (string-to-number episode) (string-to-number (second episodes-range))))
+      (let* ((embedded (enime-get-embedded-video-link anime-id episode))
+	     (video-url (enime-get-links embedded desired-quality)))
+	(make-process
+	 :name "mpv-enime"
+	 :command `("mpv" ,(concat "--http-header-fields=Referer: " embedded)
+		    ,video-url))))))
 
-  )
 
+(enime-play-episode "one-piece" "1000" "720")
