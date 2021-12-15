@@ -1,9 +1,17 @@
 (load "esxml-query.el") ;; dependency 
 
-(setq enime-base-url "https://www1.gogoanime.cm/")
+(defgroup enime nil
+  "Yet another Pomodoro timer implementation."
+  :group 'apps)
+
+
+(defcustom enime-base-url "https://www1.gogoanime.cm/"
+  "Gogo anime base url"
+  :group 'enime
+  :type 'string)
 
 (defun enime-return-parsing-tree-from-request (url params)
-  "Makes the request, using html parsing, only works for GET"
+  "makes the request, using html parsing, only works for get"
   (let ((result nil))
     (request url
       :params params
@@ -17,7 +25,7 @@
     result))
 
 (defun enime-return-raw-text-from-request (url &optional headers params)
-  "Makes a request and returns the obtained string without parsing,
+  "makes a request and returns the obtained string without parsing,
 useful for regexp"
   (let ((result nil))
     (request url
@@ -33,16 +41,16 @@ useful for regexp"
     result))
 
 (defun enime-get-anime-title-from-node (node)
-  "Returns the anime title from a node"
+  "returns the anime title from a node"
   (xml-get-attribute node 'title))
 
 (defun enime-get-anime-id-from-node (node)
-  "Returns the nime ID from node"
+  "returns the nime id from node"
   (let ((href (xml-get-attribute node 'href)))
     (car (last (split-string href "/")))))
 
 (defun enime-get-anime-img-src-from-node (node)
-  "Returns the image src value for an anime"
+  "returns the image src value for an anime"
   (xml-get-attribute (esxml-query "img" node) 'src))
 
 (defun enime-normalize-search-string (string)
@@ -53,8 +61,8 @@ useful for regexp"
 	    parts)))
 
 (defun enime-search-anime (anime-name)
-  "Searches for posible anime candidates from anime-name, returns a list of candidates
-A candidate is a list of id title img-src"
+  "searches for posible anime candidates from anime-name, returns a list of candidates
+a candidate is a list of id title img-src"
   (let* ((name (enime-normalize-search-string anime-name))
 	 (uri "/search.html")
 	 (url (concat enime-base-url uri))
@@ -67,15 +75,15 @@ A candidate is a list of id title img-src"
 	    (esxml-query-all "div>a[href^=\"/category/\"]" tree))))
 
 (defun enime-get-min-episode (tree)
-  "Returns the first episode found from a parse treee"
+  "returns the first episode found from a parse treee"
   (xml-get-attribute (car (esxml-query-all "#episode_page li a" tree)) 'ep_start))
 
 (defun enime-get-max-episode (tree)
-  "Returns the last episode found from a parse treee"
+  "returns the last episode found from a parse treee"
   (xml-get-attribute (car (last (esxml-query-all "#episode_page li a" tree))) 'ep_end))
 
 (defun enime-episodes-range (anime-id)
-  "Returns a numeric range (inclusive in both sides) of the first
+  "returns a numeric range (inclusive in both sides) of the first
 and last episode availabe"
   (let* ((uri (concat "/category/" anime-id))
 	 (url (concat enime-base-url uri))
@@ -88,7 +96,7 @@ and last episode availabe"
       `(,first-ep ,last-ep))))
 
 (defun enime-get-embedded-video-link (anime-id episode &optional dub)
-  "Returns the url of video asociated to anime episode
+  "returns the url of video asociated to anime episode
 optional parameter if the anime supports dub version"
   (let* ((uri (if dub  (concat "/" anime-id "-dub" "-episode-" episode)
 		(concat "/" anime-id "-episode-" episode)))
@@ -102,7 +110,7 @@ optional parameter if the anime supports dub version"
 
 
 (defun enime-get-video-url (embedded-url)
-  "Returns video url from embedded url"
+  "returns video url from embedded url"
   (let* ((text (enime-return-raw-text-from-request embedded-url))
 	 (prev (string-match "sources:\\[{file: '\\([^']+\\)" text))
 	 (beginning (match-beginning 1))
@@ -110,17 +118,17 @@ optional parameter if the anime supports dub version"
     (substring text beginning end)))
 
 (defun enime-get-video-file-details (embedded-url video-url)
-  "Gets the actual video file"
+  "gets the actual video file"
   (let ((request-curl-options `(,(format "--referer %s" embedded-url))))
     (enime-return-raw-text-from-request
      video-url)))
 
 (defun enime-get-available-qualities (video-file)
-  "Returns a list of available video qualities from video file details"
+  "returns a list of available video qualities from video file details"
   (when video-file
-    (let* ((positions (s-matched-positions-all "Name=\"\\([0-9]+\\)" video-file)))
+    (let* ((positions (s-matched-positions-all "name=\"\\([0-9]+\\)" video-file)))
       (mapcar (lambda (pair)
-		(substring video-file (+ 6 (car pair)) (cdr pair))) ;; +6 to get ride of NAME=\"
+		(substring video-file (+ 6 (car pair)) (cdr pair))) ;; +6 to get ride of name=\"
 	      positions)))
   )
 
@@ -133,7 +141,7 @@ higuer quality"
       (car (last qualities)))))
 
 (defun enime-get-links (embedded-url desired-quality)
-  "Returns a video url with cuality, tries to get video with
+  "returns a video url with cuality, tries to get video with
 desired quality, if not available gets the higher quality"
   (let* ((video-url (enime-get-video-url embedded-url))
 	 (video-file (enime-get-video-file-details embedded-url video-url))
@@ -146,7 +154,7 @@ desired quality, if not available gets the higher quality"
     ))
 
 (defun enime-play-episode (anime-id episode desired-quality)
-  "Opens an anime episode in mpv, it also checks if the episode is
+  "opens an anime episode in mpv, it also checks if the episode is
 in the range of available episodes "
   (let ((episodes-range (enime-episodes-range anime-id)))
     (when (and (>= (string-to-number episode) (string-to-number (car episodes-range)))
@@ -155,8 +163,9 @@ in the range of available episodes "
 	     (video-url (enime-get-links embedded desired-quality)))
 	(make-process
 	 :name "mpv-enime"
-	 :command `("mpv" ,(concat "--http-header-fields=Referer: " embedded)
+	 :command `("mpv" ,(concat "--http-header-fields=referer: " embedded)
 		    ,video-url))))))
 
 
-(enime-play-episode "one-piece" "1000" "720")
+;(enime-play-episode "one-piece" "1" "720")
+
