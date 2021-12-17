@@ -9,10 +9,25 @@
 
 (defun enime--generate-keys (length)
   "Returns a list of length containing strings from a..z A..Z
-suports up to 56 keys, if more they are discarded"
-  (-slice (mapcar (lambda (num) (char-to-string num))
-		       (append (number-sequence ?a ?z)
-			       (number-sequence ?A ?Z)))
+suports up to 104 keys, if more they are discarded"
+  (-slice (mapcar (lambda (val) val)
+		  (append
+		   (mapcar
+		    (lambda (num)
+		      (char-to-string num))
+		    (number-sequence ?a ?z))
+		   (mapcar
+		    (lambda (num)
+		      (char-to-string num))
+		    (number-sequence ?A ?Z))
+		   (mapcar
+		    (lambda (num)
+		      (concat "-" (char-to-string num)))
+		    (number-sequence ?a ?z))
+		   (mapcar
+		    (lambda (num)
+		      (concat "-" (char-to-string num)))
+		    (number-sequence ?A ?Z))))
 	  0 length))
 
 (defun enime--generate-anime-result-alist (search-string)
