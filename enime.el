@@ -178,6 +178,12 @@ desired quality, if not available gets the higher quality"
       video-url) ;; some videos do not have quality info
     ))
 
+(defun enime--good-video-url-p (video-url)
+  "t if the video url is valid, nil in other case"
+  (if (< (length video-url) 10)
+      nil
+    (string= "http" (substring video-url 0 4))))
+
 (defun enime-play-episode (anime-id episode desired-quality)
   "opens an anime episode in mpv, it also checks if the episode is
 in the range of available episodes "
@@ -186,10 +192,13 @@ in the range of available episodes "
 	       (<= (string-to-number episode) (string-to-number (second episodes-range))))
       (let* ((embedded (enime-get-embedded-video-link anime-id episode))
 	     (video-url (enime-get-links embedded desired-quality)))
-	(make-process
-	 :name "mpv-enime"
-	 :command `("mpv" ,(concat "--http-header-fields=referer: " embedded)
-		    ,video-url))))))
+	(setq mm video-url)
+	(if (enime--good-video-url-p video-url)
+	    (make-process
+	     :name "mpv-enime"
+	     :command `("mpv" ,(concat "--http-header-fields=referer: " embedded)
+			,video-url))
+	  nil)))))
 
 
 ;(enime-play-episode "one-piece" "1" "720")

@@ -114,9 +114,13 @@ suports up to 104 keys, if more they are discarded"
   "Action for playing an episode"
   (interactive)
   (message "Retrieving video, please wait...")
-  (enime-play-episode enime-current-anime-id (number-to-string enime-episode-number) enime-desired-quality)
-  (message "Enjoy!")
-  (transient-quit-all))
+  (if
+      (enime-play-episode enime-current-anime-id (number-to-string enime-episode-number) enime-desired-quality)
+      (progn
+	(message "Enjoy!")
+	(transient-quit-all))
+    (message "The episode cannot be retrieved")))
+
 
 (transient-define-prefix enime-anime-transient ()
   "Transient prefix for an anime"
