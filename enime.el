@@ -77,14 +77,13 @@ useful for regexp"
 
 (defun enime--collect-candidates-search-anime-pages (base-url pages)
   "Concatenates result candidates from all pages of a search anime"
-  (let* ((urls (enime--generate-search-anime-pages-urls base-url pages)))
-    (reduce #'append
-	    (mapcar
-	     (lambda (num)
-	       (let ((tree
-		      (enime-return-parsing-tree-from-request base-url `(("keyword" . ,name) ("page" . ,(number-to-string num))))))
-		 (enime--process-candites-search-anime-page tree)))
-	     (number-sequence 2 pages)))))
+  (reduce #'append
+	  (mapcar
+	   (lambda (num)
+	     (let ((tree
+		    (enime-return-parsing-tree-from-request base-url `(("keyword" . ,name) ("page" . ,(number-to-string num))))))
+	       (enime--process-candites-search-anime-page tree)))
+	   (number-sequence 2 pages))))
 
 (defun enime-search-anime (anime-name)
   "searches for posible anime candidates from anime-name, returns a list of candidates
