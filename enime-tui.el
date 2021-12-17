@@ -1,8 +1,5 @@
 ;;; -*- lexical-binding: t -*-
 
-(defvar enime--current-searched-anime-id nil
-
-  "Holds the id value of the currently searched anime")
 
 (defvar enime--current-anime-search-results-alist nil
   "Holds the value of the currently searched anime")
@@ -12,6 +9,22 @@
 
 (defvar enime-current-anime-key nil
   "Holds last selected key from an anime search")
+
+
+(defun enime--get-anime-alist-from-key (key)
+  "Returns the alist elements of an anime from key"
+  (transient-plist-to-alist (car (cdr (assoc key enime--current-anime-search-results-alist)))))
+
+(defun enime--get-anime-description-from-key (key)
+  "Returns the anime description from an
+enime--current-anime-search-results-alist key"
+  (cdr (assoc 'description (enime--get-anime-alist-from-key key))))
+
+(defun enime--get-anime-id-from-key (key)
+  "Returns the anime description from an
+enime--current-anime-search-results-alist key"
+  (cdr (assoc 'id (enime--get-anime-alist-from-key key))))
+
 
 (defun enime--generate-keys (length)
   "Returns a list of length containing strings from a..z A..Z
@@ -70,36 +83,23 @@ suports up to 104 keys, if more they are discarded"
   :class 'transient-lisp-variable
   :variable 'enime-episode-number
   :key "-e"
-  :description 
-  (let ((ep-range
-	 (enime-episodes-range
-	  (enime--get-anime-id-from-key
-	   enime-current-anime-key))))
-    (format
-     "Episode to watch (%s-%s available)"
-     (car ep-range)
-     (second ep-range)))
+  :description "Episode to watch"
   :reader (lambda (&rest _)
-            (read-number "Episode: "
-                         enime-episode-number)))
+	    (let ((ep-range
+		   (enime-episodes-range
+		    (enime--get-anime-id-from-key
+		     enime-current-anime-key))))
+	      (read-number (format
+			    "Episode (%s-%s available): "
+			    (car ep-range)
+			    (second ep-range))
+			   enime-episode-number))))
 
-(defun enime--get-anime-alist-from-key (key)
-  "Returns the alist elements of an anime from key"
-  (transient-plist-to-alist (car (cdr (assoc key enime--current-anime-search-results-alist)))))
-
-(defun enime--get-anime-description-from-key (key)
-  "Returns the anime description from an
-enime--current-anime-search-results-alist key"
-  (cdr (assoc 'description (enime--get-anime-alist-from-key key))))
-
-(defun enime--get-anime-id-from-key (key)
-  "Returns the anime description from an
-enime--current-anime-search-results-alist key"
-  (cdr (assoc 'id (enime--get-anime-alist-from-key key))))
 
 (transient-define-prefix enime-anime-transient ()
   "Transient prefix for an anime"
-  [:description
+  [:class transient-row
+   :description
    (lambda () (enime--get-anime-description-from-key enime-current-anime-key))
    (enime--set-anime-episode)])
 
