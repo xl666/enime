@@ -92,8 +92,7 @@ suports up to 104 keys, if more they are discarded"
   :reader (lambda (&rest _)
 	    (let ((ep-range
 		   (enime-episodes-range
-		    (enime--get-anime-id-from-key
-		     enime-current-anime-key))))
+		    enime-current-anime-id)))
 	      (read-number (format
 			    "Episode (%s-%s available): "
 			    (car ep-range)
@@ -134,6 +133,9 @@ hold in enime--current-anime-search-results-alist"
                              (lambda ()
                                (interactive)
 			       (setq enime-current-anime-key .key)
+			       (setq enime-current-anime-id
+				     (enime--get-anime-id-from-key
+				      enime-current-anime-key))
                                (enime-anime-transient)))))))
              enime--current-anime-search-results-alist))
 
