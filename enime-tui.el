@@ -110,14 +110,21 @@ suports up to 104 keys, if more they are discarded"
 	    (second (read-multiple-choice "Choose quality: "
 					  '((?a "360") (?b "480") (?c " 720") (?d "1080"))))))
 
+(defun enime--play-episode-action ()
+  "Action for playing an episodex"
+  (interactive)
+  (enime-play-episode enime-current-anime-id (number-to-string enime-episode-number) enime-desired-quality))
+
 (transient-define-prefix enime-anime-transient ()
   "Transient prefix for an anime"
   [:class transient-row
-   :description
-   (lambda () (enime--get-anime-description-from-key enime-current-anime-key))
-   (enime--set-anime-episode)
-   (enime--set-desired-quality)
-   ])
+	  :description
+	  (lambda () (enime--get-anime-description-from-key enime-current-anime-key))
+	  (enime--set-anime-episode)
+	  (enime--set-desired-quality)
+	  ]
+  ["Actions"
+   ("p" "Play epidose" enime--play-episode-action :transient t)])
 
 (defun enime--set-select-anime-children (_)
   "Returns dinamically created suffixes acording with anime results
