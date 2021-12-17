@@ -10,6 +10,11 @@
 (defvar enime-current-anime-key nil
   "Holds last selected key from an anime search")
 
+(defvar enime-desired-quality "1080"
+  "Desired episode quiality, may not be availabe")
+
+(defvar enime-current-anime-id nil
+  "Holds last selected id from an anime search")
 
 (defun enime--get-anime-alist-from-key (key)
   "Returns the alist elements of an anime from key"
@@ -96,12 +101,24 @@ suports up to 104 keys, if more they are discarded"
 			   enime-episode-number))))
 
 
+(transient-define-infix enime--set-desired-quality ()
+  "Sets desired quality of episode, may not be available"
+  :class 'transient-lisp-variable
+  :variable 'enime-desired-quality
+  :description "Desired video quiality"
+  :key "-q"
+  :reader (lambda (&rest _)
+	    (second (read-multiple-choice "Choose quality: "
+					  '((?a "360") (?b "480") (?c " 720") (?d "1080"))))))
+
 (transient-define-prefix enime-anime-transient ()
   "Transient prefix for an anime"
   [:class transient-row
    :description
    (lambda () (enime--get-anime-description-from-key enime-current-anime-key))
-   (enime--set-anime-episode)])
+   (enime--set-anime-episode)
+   (enime--set-desired-quality)
+   ])
 
 (defun enime--set-select-anime-children (_)
   "Returns dinamically created suffixes acording with anime results
