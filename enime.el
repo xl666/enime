@@ -60,6 +60,32 @@ useful for regexp"
 	      (concat str1 "-" str2))
 	    parts)))
 
+
+(defun enime--pages-search-anime (tree)
+  "Returns the number of pages found in an anime search"
+  (let ((pags (esxml-query-all ".pagination-list li" tree)))
+    (length pags)))
+
+
+(defun enime--process-candites-search-anime-page (tree)
+  "Returns candidates found in a parse tree"
+  (mapcar (lambda (node)
+	    `(,(enime-get-anime-id-from-node node)
+	      ,(enime-get-anime-title-from-node node)
+	      ,(enime-get-anime-img-src-from-node node)))
+	  (esxml-query-all "div>a[href^=\"/category/\"]" tree)))
+
+(defun enime--collect-candidates-search-anime-pages (base-url pages)
+  "Concatenates result candidates from all pages of a search anime"
+  (let* ((urls (enime--generate-search-anime-pages-urls base-url pages)))
+    (reduce #'append
+	    (mapcar
+	     (lambda (num)
+	       (let ((tree
+		      (enime-return-parsing-tree-from-request base-url `(("keyword" . ,name) ("page" . ,(number-to-string num))))))
+		 (enime--process-candites-search-anime-page tree)))
+	     (number-sequence 2 pages)))))
+
 (defun enime-search-anime (anime-name)
   "searches for posible anime candidates from anime-name, returns a list of candidates
 a candidate is a list of id title img-src"
@@ -67,12 +93,12 @@ a candidate is a list of id title img-src"
 	 (uri "/search.html")
 	 (url (concat enime-base-url uri))
 	 (tree
-	  (enime-return-parsing-tree-from-request url `(("keyword" . ,name)))))
-    (mapcar (lambda (node)
-	      `(,(enime-get-anime-id-from-node node)
-		,(enime-get-anime-title-from-node node)
-		,(enime-get-anime-img-src-from-node node)))
-	    (esxml-query-all "div>a[href^=\"/category/\"]" tree))))
+	  (enime-return-parsing-tree-from-request url `(("keyword" . ,name))))
+	 (pages (enime--pages-search-anime tree))
+	 (candidates-fist-page (enime--process-candites-search-anime-page tree)))
+    (if (= 0 pages)
+	candidates-fist-page
+      (append candidates-fist-page (enime--collect-candidates-search-anime-pages url pages)))))
 
 (defun enime-get-min-episode (tree)
   "returns the first episode found from a parse treee"
