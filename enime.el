@@ -10,6 +10,11 @@
   :group 'enime
   :type 'string)
 
+(defcustom enime-tmp-dir "/tmp"
+  "Directory to save temporal data like anime cover art"
+  :group 'enime
+  :type 'string)
+
 (defun enime-return-parsing-tree-from-request (url params)
   "makes the request, using html parsing, only works for get"
   (let ((result nil))
@@ -58,19 +63,23 @@ useful for regexp"
   (if (not current-list)  ""
     (if (stringp (car current-list))
 	(concat (s-trim (car current-list))
-		(enime--extract-text-description
+		(enime--extract-text-description-rec
 		 (cdr current-list)))
       (if (and (listp (car current-list))
 	       (stringp (car (last (car current-list)))))
 	  (concat (s-trim (car (last (car current-list))))
-		  (enime--extract-text-description
+		  (enime--extract-text-description-rec
 		   (cdr current-list)))
-	(enime--extract-text-description
+	(enime--extract-text-description-rec
 	 (cdr current-list))))))
 
-(defun enime--get-anime-details-from-tree (tree)
-  "Returs anime description from a parsing tree"
-  (let* ((nodes (esxml-query-all "div.anime_info_body_bg>p.type" tree)))
+(defun enime--get-anime-details (anime-id)
+  "Returs anime description from an anime id"
+  (let* ((uri (concat "/category/" anime-id))
+	 (url (concat enime-base-url uri))
+	 (tree
+	  (enime-return-parsing-tree-from-request url nil))
+	 (nodes (esxml-query-all "div.anime_info_body_bg>p.type" tree)))
     (reduce (lambda (str1 str2)
 	      (concat str1 "\n\n" str2))
 	    (mapcar (lambda (node)
