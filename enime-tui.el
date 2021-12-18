@@ -164,11 +164,11 @@ hold in enime--current-anime-search-results-alist"
     (error nil))
   (let ((buffer
 	 (get-buffer-create "enime-anime-details")))
-    (switch-to-buffer-other-window buffer)
+    (switch-to-buffer buffer)
     (with-current-buffer "enime-anime-details"
       (set-window-margins nil 30 30)
       (insert img-file-path)
-      (insert (concat "\nDETAILS:\n" details))
+      (insert (concat "\n\nDETAILS\n\n" details))
       (special-mode)
       (call-interactively 'iimage-mode)
       (beginning-of-buffer))))

@@ -53,6 +53,30 @@ useful for regexp"
   "returns the image src value for an anime"
   (xml-get-attribute (esxml-query "img" node) 'src))
 
+(defun enime--extract-text-description-rec (&optional current-list)
+  "Returns a string containing the text of a node element"
+  (if (not current-list)  ""
+    (if (stringp (car current-list))
+	(concat (s-trim (car current-list))
+		(enime--extract-text-description
+		 (cdr current-list)))
+      (if (and (listp (car current-list))
+	       (stringp (car (last (car current-list)))))
+	  (concat (s-trim (car (last (car current-list))))
+		  (enime--extract-text-description
+		   (cdr current-list)))
+	(enime--extract-text-description
+	 (cdr current-list))))))
+
+(defun enime--get-anime-details-from-tree (tree)
+  "Returs anime description from a parsing tree"
+  (let* ((nodes (esxml-query-all "div.anime_info_body_bg>p.type" tree)))
+    (reduce (lambda (str1 str2)
+	      (concat str1 "\n\n" str2))
+	    (mapcar (lambda (node)
+		      (enime--extract-text-description-rec node))
+		    (butlast nodes)))))
+
 (defun enime-normalize-search-string (string)
   "gets ride of spaces and joins with -"
   (let ((parts (split-string string)))
@@ -199,7 +223,4 @@ in the range of available episodes "
 	     :command `("mpv" ,(concat "--http-header-fields=referer: " embedded)
 			,video-url))
 	  nil)))))
-
-
-;(enime-play-episode "one-piece" "1" "720")
 
