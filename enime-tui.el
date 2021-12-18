@@ -30,6 +30,10 @@ enime--current-anime-search-results-alist key"
 enime--current-anime-search-results-alist key"
   (cdr (assoc 'id (enime--get-anime-alist-from-key key))))
 
+(defun enime--get-anime-img-url-from-key (key)
+  "Returns the anime description from an
+enime--current-anime-search-results-alist key"
+  (cdr (assoc 'img-src (enime--get-anime-alist-from-key key))))
 
 (defun enime--generate-keys (length)
   "Returns a list of length containing strings from a..z A..Z
@@ -121,6 +125,19 @@ suports up to 104 keys, if more they are discarded"
 	(transient-quit-all))
     (message "The episode cannot be retrieved")))
 
+(defun enime--show-details-action ()
+  "Action for displaying anime details"
+  (interactive)
+  (let ((img-path
+	 (format "%s/%s.jpg"
+		 enime-tmp-dir
+		 enime-current-anime-id)))
+    (enime--download-cover-art
+     (enime--get-anime-img-url-from-key enime-current-anime-key)
+     img-path)
+    (enime--display-anime-details
+     img-path
+     (enime--get-anime-details enime-current-anime-id))))
 
 (transient-define-prefix enime-anime-transient ()
   "Transient prefix for an anime"
@@ -131,7 +148,9 @@ suports up to 104 keys, if more they are discarded"
 	  (enime--set-desired-quality)
 	  ]
   ["Actions"
-   ("p" "Play epidose" enime--play-episode-action)])
+   :class transient-row
+   ("p" "Play epidose" enime--play-episode-action)
+   ("d" "Show anime details" enime--show-details-action :transient t)])
 
 (defun enime--set-select-anime-children (_)
   "Returns dinamically created suffixes acording with anime results
@@ -172,3 +191,7 @@ hold in enime--current-anime-search-results-alist"
       (special-mode)
       (call-interactively 'iimage-mode)
       (beginning-of-buffer))))
+
+(defun enime--download-cover-art (img-url out-path)
+  "Downloads and saves a cover art image from img-url"
+  (shell-command (format "curl -o %s %s &> /dev/null" out-path img-url)))
