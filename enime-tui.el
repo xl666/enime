@@ -157,3 +157,18 @@ hold in enime--current-anime-search-results-alist"
   ["Select an anime"
    :setup-children enime--set-select-anime-children])
 
+(defun enime--display-anime-details (img-file-path details)
+  "Opens a special buffer showing an anime image and text details"
+  (condition-case nil
+      (kill-buffer "enime-anime-details")
+    (error nil))
+  (let ((buffer
+	 (get-buffer-create "enime-anime-details")))
+    (switch-to-buffer-other-window buffer)
+    (with-current-buffer "enime-anime-details"
+      (set-window-margins nil 30 30)
+      (insert img-file-path)
+      (insert (concat "\nDETAILS:\n" details))
+      (special-mode)
+      (call-interactively 'iimage-mode)
+      (beginning-of-buffer))))
