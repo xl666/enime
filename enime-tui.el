@@ -83,7 +83,7 @@ suports up to 104 keys, if more they are discarded"
   ["Commands"
    :class transient-row
    ("s" "Anime search" enime--search-for-anime :transient t)
-   ("q" "Quit" transient-quit-one)]
+   ("q" "Quit" transient-quit-all)]
   (interactive)
   (transient-setup 'enime-main-transient))
 
@@ -150,7 +150,10 @@ suports up to 104 keys, if more they are discarded"
   ["Actions"
    :class transient-row
    ("p" "Play epidose" enime--play-episode-action)
-   ("d" "Show anime details" enime--show-details-action :transient t)])
+   ("d" "Show anime details" enime--show-details-action)
+   ("m" "Return to main menu" enime-main-transient)
+   ("s" "Return to anime selection" enime-select-anime-transient)
+   ("q" "Quit" transient-quit-all)])
 
 (defun enime--set-select-anime-children (_)
   "Returns dinamically created suffixes acording with anime results
@@ -176,6 +179,12 @@ hold in enime--current-anime-search-results-alist"
   ["Select an anime"
    :setup-children enime--set-select-anime-children])
 
+(defun enime--restore-anime-transient-after-details ()
+  "After quitting a details buffer, return to previous anime transient"
+  (interactive)
+  (kill-current-buffer)
+  (enime-anime-transient))
+
 (defun enime--display-anime-details (img-file-path details)
   "Opens a special buffer showing an anime image and text details"
   (condition-case nil
@@ -189,9 +198,24 @@ hold in enime--current-anime-search-results-alist"
       (insert img-file-path)
       (insert (concat "\n\nDETAILS\n\n" details))
       (special-mode)
+      (enime--details-mode)
       (call-interactively 'iimage-mode)
       (beginning-of-buffer))))
 
 (defun enime--download-cover-art (img-url out-path)
   "Downloads and saves a cover art image from img-url"
   (shell-command (format "curl -o %s %s &> /dev/null" out-path img-url)))
+
+
+(define-minor-mode enime--details-mode
+  "Minor mode for keybinding specific to detail bufers"
+  nil
+  :lighter "anime details")
+
+(defvar enime--details-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "q" 'enime--restore-anime-transient-after-details)
+    map)
+  "Keymap for enime details mode.")
+
+(provide 'enime--details-mode)
