@@ -125,6 +125,11 @@ suports up to 104 keys, if more they are discarded"
 	(transient-quit-all))
     (message "The episode cannot be retrieved")))
 
+(defun enime--follow-action ()
+  "Action for start following an anime"
+  (interactive)
+  (enime--follow-anime enime-current-anime-id enime-episode-number))
+
 (defun enime--show-details-action ()
   "Action for displaying anime details"
   (interactive)
@@ -149,6 +154,7 @@ suports up to 104 keys, if more they are discarded"
 	  ]
   ["Actions"
    :class transient-row
+   ("f" "Follow anime" enime--follow-action)
    ("p" "Play epidose" enime--play-episode-action)
    ("d" "Show anime details" enime--show-details-action)
    ("m" "Return to main menu" enime-main-transient)
