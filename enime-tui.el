@@ -128,7 +128,11 @@ suports up to 104 keys, if more they are discarded"
 (defun enime--follow-action ()
   "Action for start following an anime"
   (interactive)
-  (enime--follow-anime enime-current-anime-id enime-episode-number))
+  (enime--follow-anime enime-current-anime-id
+		       enime-episode-number
+		       (enime--get-anime-description-from-key
+			enime-current-anime-key))
+  (enime-anime-transient))
 
 (defun enime--show-details-action ()
   "Action for displaying anime details"

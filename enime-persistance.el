@@ -7,7 +7,7 @@
   ((data :initarg :menagerie :initform nil)
    (file :initform "")))
 
-(defun enime--follow-anime (anime-id current-episode)
+(defun enime--follow-anime (anime-id current-episode description)
   "Store new anime to follow"
   (let* ((store
 	  (condition-case nil
@@ -17,8 +17,12 @@
 	  (when store
 	    (oref store data)))
 	 (element `(,anime-id
-		    (:current-episode
+		    (:description
+		     ,description
+		     :current-episode
 		     ,current-episode
+		     :time-elapsed
+		     0
 		     :opening-skip
 		     0
 		     :consider-finished-left
@@ -33,5 +37,6 @@
 	(oset store data
 	      (append animes
 		      (list element)))
-	(eieio-persistent-save store enime-storage-file)))))
+	(eieio-persistent-save store enime-storage-file)
+	(message "Following anime")))))
 
