@@ -196,25 +196,28 @@ optional parameter if the anime supports dub version"
 	    video-links)))
 
 
-(defun enime-set-quality (video-file desired-quality)
-  "cheks if the desired quality is available, if not it returns the
-higuer quality"
-  (let* ((qualities (enime-get-available-qualities video-file)))
-    (if (member desired-quality qualities)
-	desired-quality
-      (car (last qualities)))))
+(defun enime-set-quality (alist-links desired-quality)
+  "cheks if the desired quality is available in alist, if not it returns the
+higuer quality, i.e.; the last element in alist"
+  (if (member desired-quality
+	      (mapcar (lambda (element)
+			(car element))
+		      alist-links))
+      desired-quality
+    (caar (last alist-links))))
 
 (defun enime-get-links (embedded-url desired-quality)
   "returns a video url with quality, tries to get video with
 desired quality, if not available gets the higher quality"
   (let* ((video-url (enime-get-video-url embedded-url))
-	 (video-file (enime-get-video-file-details embedded-url video-url))
-	 (quality (enime-set-quality video-file desired-quality))
+	 (links (enime--get-video-links video-url))
+	 (alist-links (enime-get-available-qualities links))
+	 (quality (enime-set-quality alist-links desired-quality))
 					; maybe get the tmp url?
 	 )
     (if quality
-	(concat (substring video-url 0 -4) quality ".m3u8")
-      video-url) ;; some videos do not have quality info
+	(car (cdr (assoc quality alist-links)))
+      video-url) ;; some videos do not have quality info, not sure if still useful
     ))
 
 (defun enime--good-video-url-p (video-url)
