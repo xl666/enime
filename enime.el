@@ -169,11 +169,11 @@ optional parameter if the anime supports dub version"
 
 (defun enime-get-video-url (embedded-url)
   "returns video url from embedded url"
-  (let* ((text (enime-return-raw-text-from-request embedded-url))
-	 (prev (string-match "sources:\\[{file: '\\([^']+\\)" text))
+  (let* (
+	 (prev (string-match "http[^?]+\\?\\(id=.*\\)" embedded-url))
 	 (beginning (match-beginning 1))
 	 (end (match-end 1)))
-    (substring text beginning end)))
+    (concat "https://gogoplay1.com/download?" (substring embedded-url beginning end))))
 
 (defun enime-get-video-file-details (embedded-url video-url)
   "gets the actual video file"
@@ -199,7 +199,7 @@ higuer quality"
       (car (last qualities)))))
 
 (defun enime-get-links (embedded-url desired-quality)
-  "returns a video url with cuality, tries to get video with
+  "returns a video url with quality, tries to get video with
 desired quality, if not available gets the higher quality"
   (let* ((video-url (enime-get-video-url embedded-url))
 	 (video-file (enime-get-video-file-details embedded-url video-url))
@@ -225,7 +225,6 @@ in the range of available episodes "
 	       (<= (string-to-number episode) (string-to-number (second episodes-range))))
       (let* ((embedded (enime-get-embedded-video-link anime-id episode))
 	     (video-url (enime-get-links embedded desired-quality)))
-	(setq mm video-url)
 	(if (enime--good-video-url-p video-url)
 	    (make-process
 	     :name "mpv-enime"
