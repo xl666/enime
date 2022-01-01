@@ -40,3 +40,15 @@
 	(eieio-persistent-save store enime-storage-file)
 	(message "Following anime")))))
 
+(defun enime--is-anime-followed-p (anime-id)
+  "Predicate to determine if an anime is being followed"
+  (let ((store
+	 (condition-case nil
+	     (eieio-persistent-read enime-storage-file Anime-Storage)
+	   (error nil))))
+    (if store
+	(let ((animes (oref store data)))
+	  (when (assoc anime-id animes)
+	    t))
+      nil)))
+

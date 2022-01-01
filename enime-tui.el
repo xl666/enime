@@ -158,12 +158,25 @@ suports up to 104 keys, if more they are discarded"
 	  ]
   ["Actions"
    :class transient-row
-   ("f" "Follow anime" enime--follow-action)
+   ("f" "Follow anime" enime--follow-action
+    :if (lambda ()
+	  (not (enime--is-anime-followed-p
+		enime-current-anime-id))))
    ("p" "Play epidose" enime--play-episode-action)
    ("d" "Show anime details" enime--show-details-action)
    ("m" "Return to main menu" enime-main-transient)
    ("s" "Return to anime selection" enime-select-anime-transient)
-   ("q" "Quit" transient-quit-all)])
+   ("q" "Quit" transient-quit-all)]
+  ["Anime configuration"
+   :class transient-row
+   :if (lambda ()
+	 (enime--is-anime-followed-p
+	  enime-current-anime-id))
+   ("u" "Unfollow anime" enime--show-details-action)
+   ("r" "Resume anime" enime--show-details-action)
+   ("-k" "Skip opening at second" enime--show-details-action)
+   ("-t" "Consider episode finished at seconds left" enime--show-details-action)
+   ])
 
 (defun enime--set-select-anime-children (_)
   "Returns dinamically created suffixes acording with anime results
