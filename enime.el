@@ -183,14 +183,18 @@ optional parameter if the anime supports dub version"
     (mapcar (lambda (intern) (car intern))
 	    (s-match-strings-all "http.+\\.com\\/cdn.+expiry=[0-9]+" text))))
 
-(defun enime-get-available-qualities (video-urls)
-  "returns a list of available video qualities from video file details"
-  (when video-file
-    (let* ((positions (s-matched-positions-all "name=\"\\([0-9]+\\)" video-file)))
-      (mapcar (lambda (pair)
-		(substring video-file (+ 6 (car pair)) (cdr pair))) ;; +6 to get ride of name=\"
-	      positions)))
-  )
+(defun enime-get-available-qualities (video-links)
+  "returns an alist of available video qualities asociated with their url"
+  (when video-links
+    (mapcar (lambda (link)
+	      (let* ((prev (string-match
+			    "http.+\\.com\\/cdn.+\\.\\([0-9]+\\)p\\."
+			    link))
+		     (beginning (match-beginning 1))
+		     (end (match-end 1)))
+		`(,(substring link beginning end) ,link)))
+	    video-links)))
+
 
 (defun enime-set-quality (video-file desired-quality)
   "cheks if the desired quality is available, if not it returns the
