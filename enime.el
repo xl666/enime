@@ -196,6 +196,7 @@ optional parameter if the anime supports dub version"
 	    video-links)))
 
 
+
 (defun enime-set-quality (alist-links desired-quality)
   "cheks if the desired quality is available in alist, if not it returns the
 higuer quality, i.e.; the last element in alist"
@@ -205,6 +206,12 @@ higuer quality, i.e.; the last element in alist"
 		      alist-links))
       desired-quality
     (caar (last alist-links))))
+
+
+(defun enime--clean-url (url)
+  "Deletes amp; from url"
+  (reduce #'concat
+	  (split-string url "amp;")))
 
 (defun enime-get-links (embedded-url desired-quality)
   "returns a video url with quality, tries to get video with
@@ -216,8 +223,8 @@ desired quality, if not available gets the higher quality"
 					; maybe get the tmp url?
 	 )
     (if quality
-	(car (cdr (assoc quality alist-links)))
-      video-url) ;; some videos do not have quality info, not sure if still useful
+	(enime--clean-url (car (cdr (assoc quality alist-links))))
+      (enime--clean-url video-url)) ;; some videos do not have quality info, not sure if still useful
     ))
 
 (defun enime--good-video-url-p (video-url)
@@ -234,10 +241,11 @@ in the range of available episodes "
 	       (<= (string-to-number episode) (string-to-number (second episodes-range))))
       (let* ((embedded (enime-get-embedded-video-link anime-id episode))
 	     (video-url (enime-get-links embedded desired-quality)))
+	(setq uurl video-url)
 	(if (enime--good-video-url-p video-url)
 	    (make-process
 	     :name "mpv-enime"
-	     :command `("mpv" ,(concat "--http-header-fields=referer: " embedded)
+	     :command `("mpv" 
 			,video-url))
 	  nil)))))
 
