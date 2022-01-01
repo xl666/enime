@@ -175,13 +175,15 @@ optional parameter if the anime supports dub version"
 	 (end (match-end 1)))
     (concat "https://gogoplay1.com/download?" (substring embedded-url beginning end))))
 
-(defun enime-get-video-file-details (embedded-url video-url)
-  "gets the actual video file"
-  (let ((request-curl-options `(,(format "--referer %s" embedded-url))))
-    (enime-return-raw-text-from-request
-     video-url)))
 
-(defun enime-get-available-qualities (video-file)
+(defun enime--get-video-links (video-url)
+  "Returns a list of available video urls with different qualities"
+  (let ((text (enime-return-raw-text-from-request
+	       video-url)))
+    (mapcar (lambda (intern) (car intern))
+	    (s-match-strings-all "http.+\\.com\\/cdn.+expiry=[0-9]+" text))))
+
+(defun enime-get-available-qualities (video-urls)
   "returns a list of available video qualities from video file details"
   (when video-file
     (let* ((positions (s-matched-positions-all "name=\"\\([0-9]+\\)" video-file)))
