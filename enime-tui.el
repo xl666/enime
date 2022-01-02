@@ -35,6 +35,16 @@ enime--current-anime-search-results-alist key"
 enime--current-anime-search-results-alist key"
   (cdr (assoc 'img-src (enime--get-anime-alist-from-key key))))
 
+(defun enime--get-anime-current-episode (key)
+  "Returns the anime description from an
+enime--current-anime-search-results-alist key"
+  (let
+      ((episode
+	(cdr (assoc
+	      'current-episode
+	      (enime--get-anime-alist-from-key key)))))
+    (if episode  episode 1)))
+
 (defun enime--generate-keys (length)
   "Returns a list of length containing strings from a..z A..Z
 suports up to 104 keys, if more they are discarded"
@@ -212,6 +222,8 @@ hold in enime--current-anime-search-results-alist"
 			       (setq enime-current-anime-id
 				     (enime--get-anime-id-from-key
 				      enime-current-anime-key))
+			       (setq enime-episode-number
+				     1)
                                (enime-anime-transient)))))))
              enime--current-anime-search-results-alist))
 
@@ -245,6 +257,9 @@ hold in enime--current-anime-search-results-alist"
 				 (setq enime-current-anime-key .key)
 				 (setq enime-current-anime-id
 				       (enime--get-anime-id-from-key
+					enime-current-anime-key))
+				 (setq enime-episode-number
+				       (enime--get-anime-current-episode
 					enime-current-anime-key))
 				 (enime-anime-transient)))))))
 	       anime-alist-prefixes)))
