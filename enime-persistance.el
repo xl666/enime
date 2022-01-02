@@ -40,6 +40,19 @@
 	(eieio-persistent-save store enime-storage-file)
 	(message "Following anime")))))
 
+(defun enime--unfollow-anime (anime-id)
+  "Unfollow an anime, that is, delete it from db"
+  (let* ((store
+	  (condition-case nil
+	      (eieio-persistent-read enime-storage-file Anime-Storage)
+	    (error nil))))
+    (if store
+	(let ((animes (oref store data)))
+	  (oset store data
+		(assoc-delete-all anime-id animes))
+	  (eieio-persistent-save store enime-storage-file))
+      nil)))
+
 (defun enime--is-anime-followed-p (anime-id)
   "Predicate to determine if an anime is being followed"
   (let ((store

@@ -134,6 +134,12 @@ suports up to 104 keys, if more they are discarded"
 			enime-current-anime-key))
   (enime-anime-transient))
 
+(defun enime--unfollow-action ()
+  "Action for unfollowing an anime"
+  (interactive)
+  (enime--unfollow-anime enime-current-anime-id)
+  (enime-anime-transient))
+
 (defun enime--show-details-action ()
   "Action for displaying anime details"
   (interactive)
@@ -165,14 +171,17 @@ suports up to 104 keys, if more they are discarded"
    ("p" "Play epidose" enime--play-episode-action)
    ("d" "Show anime details" enime--show-details-action)
    ("m" "Return to main menu" enime-main-transient)
-   ("s" "Return to anime selection" enime-select-anime-transient)
+   ("s" "Return to anime selection" enime-select-anime-transient
+    :if (lambda ()
+	  (not (enime--is-anime-followed-p
+		enime-current-anime-id))))
    ("q" "Quit" transient-quit-all)]
   ["Anime configuration"
    :class transient-row
    :if (lambda ()
 	 (enime--is-anime-followed-p
 	  enime-current-anime-id))
-   ("u" "Unfollow anime" enime--show-details-action)
+   ("u" "Unfollow anime" enime--unfollow-action)
    ("r" "Resume anime" enime--show-details-action)
    ("-k" "Skip opening at second" enime--show-details-action)
    ("-t" "Consider episode finished at seconds left" enime--show-details-action)
