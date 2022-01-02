@@ -75,14 +75,20 @@ suports up to 104 keys, if more they are discarded"
 	(enime--generate-anime-result-alist
 	 (read-string "Anime: ")))
   (if enime--current-anime-search-results-alist
-       (enime-select-anime-transient)
+      (enime-select-anime-transient)
     (message "No results found")))
+
+(defun enime--search-for-followed-animes ()
+  "Select followed anime"
+  (interactive)
+  (enime-select-followed-anime-transient))
 
 (transient-define-prefix enime-main-transient ()
   "Transient prefix with main menu"
   ["Commands"
    :class transient-row
    ("s" "Anime search" enime--search-for-anime :transient t)
+   ("f" "Animes followed" enime--search-for-followed-animes :transient t)
    ("q" "Quit" transient-quit-all)]
   (interactive)
   (transient-setup 'enime-main-transient))
@@ -131,6 +137,8 @@ suports up to 104 keys, if more they are discarded"
   (enime--follow-anime enime-current-anime-id
 		       enime-episode-number
 		       (enime--get-anime-description-from-key
+			enime-current-anime-key)
+		       (enime--get-anime-img-url-from-key
 			enime-current-anime-key))
   (enime-anime-transient))
 
@@ -207,9 +215,47 @@ hold in enime--current-anime-search-results-alist"
                                (enime-anime-transient)))))))
              enime--current-anime-search-results-alist))
 
+(defun enime--generate-followed-anime-alist ()
+  "Generates an alist for prefix selection based on enime--followed-anime-alist-cache"
+  (let* ((keys (enime--generate-keys
+		(length
+		 enime--followed-anime-alist-cache))))
+    (-zip-with (lambda (anime key)
+		 `(,key ,(append (list :key key)
+				 (car (cdr anime)))))
+	       enime--followed-anime-alist-cache keys)))
+
+(defun enime--set-select-followed-anime-children (_)
+  "Returns dinamically created suffixes acording with followed animes"
+  (let* ((anime-alist-prefixes
+	  (enime--generate-followed-anime-alist)))
+    (setq
+     enime--current-anime-search-results-alist
+     anime-alist-prefixes)
+    (cl-mapcan (lambda (anime-followed)
+		 (let-alist (transient-plist-to-alist
+			     (car (cdr anime-followed)))
+		   (and .key
+			(transient--parse-child
+			 'enime-select-followed-anime-transient
+			 (list .key
+                               .description
+                               (lambda ()
+				 (interactive)
+				 (setq enime-current-anime-key .key)
+				 (setq enime-current-anime-id
+				       (enime--get-anime-id-from-key
+					enime-current-anime-key))
+				 (enime-anime-transient)))))))
+	       anime-alist-prefixes)))
+
 (transient-define-prefix enime-select-anime-transient ()
   ["Select an anime"
    :setup-children enime--set-select-anime-children])
+
+(transient-define-prefix enime-select-followed-anime-transient ()
+  ["Select a followwd anime"
+   :setup-children enime--set-select-followed-anime-children])
 
 (defun enime--restore-anime-transient-after-details ()
   "After quitting a details buffer, return to previous anime transient"

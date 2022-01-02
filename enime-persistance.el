@@ -37,13 +37,20 @@
       (eieio-persistent-save store enime-storage-file)
       (setq enime--followed-anime-alist-cache new-alist))))
 
-(defun enime--follow-anime (anime-id current-episode description)
+(defun enime--follow-anime (anime-id
+			    current-episode
+			    description
+			    img-src)
   "Store new anime to follow"
   (let* (
 	 (animes (enime--get-followed-anime-alist))
 	 (element `(,anime-id
-		    (:description
+		    (:id
+		     ,anime-id
+		     :description
 		     ,description
+		     :img-src
+		     ,img-src
 		     :current-episode
 		     ,current-episode
 		     :time-elapsed
