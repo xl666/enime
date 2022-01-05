@@ -50,7 +50,7 @@ useful for regexp"
   (xml-get-attribute node 'title))
 
 (defun enime-get-anime-id-from-node (node)
-  "returns the nime id from node"
+  "returns the anime id from node"
   (let ((href (xml-get-attribute node 'href)))
     (car (last (split-string href "/")))))
 
@@ -153,18 +153,30 @@ and last episode availabe"
 	`("1" ,last-ep)
       `(,first-ep ,last-ep))))
 
+
+(defun enime--404-url-p (url)
+  "Checks if a url returns a 404 error"
+  (let* ((text (enime-return-raw-text-from-request url)))
+    (s-contains? "404" text)))
+
 (defun enime-get-embedded-video-link (anime-id episode &optional dub)
   "returns the url of video asociated to anime episode
 optional parameter if the anime supports dub version"
-  (let* ((uri (if dub  (concat "/" anime-id "-dub" "-episode-" episode)
-		(concat "/" anime-id "-episode-" episode)))
-	 (url (concat enime-base-url uri))
+  (let* ((uri1 (if dub
+		   (concat "/" anime-id "-dub" "-" episode)
+		 (concat "/" anime-id "-" episode)))
+	 (uri2 (if dub
+		   (concat "/" anime-id "-dub" "-episode-" episode)
+		 (concat "/" anime-id "-episode-" episode)))
+	 (url1 (concat enime-base-url uri1))
+	 (url2 (concat enime-base-url uri2))
+	 (url (if (enime--404-url-p url1) url2 url1))
 	 (tree
-	  (enime-return-parsing-tree-from-request url nil))	 
-	 )
-    (concat "https:"
-	    (xml-get-attribute
-	     (car (esxml-query-all "a[rel=\"100\"]" tree)) 'data-video))))
+	  (enime-return-parsing-tree-from-request url nil)))
+    (setq arbol tree)
+    (xml-get-attribute
+     (esxml-query "li.dowloads>a" tree)
+     'href)))
 
 
 (defun enime-get-video-url (embedded-url)
