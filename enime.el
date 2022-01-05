@@ -173,7 +173,6 @@ optional parameter if the anime supports dub version"
 	 (url (if (enime--404-url-p url1) url2 url1))
 	 (tree
 	  (enime-return-parsing-tree-from-request url nil)))
-    (setq arbol tree)
     (xml-get-attribute
      (esxml-query "li.dowloads>a" tree)
      'href)))
@@ -195,17 +194,31 @@ optional parameter if the anime supports dub version"
     (mapcar (lambda (intern) (car intern))
 	    (s-match-strings-all "http.+\\.com\\/cdn.+expiry=[0-9]+" text))))
 
-(defun enime-get-available-qualities (video-links)
-  "returns an alist of available video qualities asociated with their url"
-  (when video-links
-    (mapcar (lambda (link)
+(defun enime--filter-downloads-qualities-tree (tree)
+  "Returns an alist of available download urls per quality"
+  (let* ((elements
+	  (esxml-query-all "div.dowload>a" tree)))
+    (mapcar (lambda (element)
 	      (let* ((prev (string-match
-			    "http.+\\.com\\/cdn.+\\.\\([0-9]+\\)p\\."
-			    link))
+			    "\\([0-9][0-9][0-9][0-9]?\\)"
+			    (third element)))
 		     (beginning (match-beginning 1))
 		     (end (match-end 1)))
-		`(,(substring link beginning end) ,link)))
-	    video-links)))
+		`(,(substring (third element) beginning end)
+		  ,(xml-get-attribute element 'href))))
+	    (cl-remove-if
+	     (lambda (val)
+	       (not (s-starts-with? "Download\n"
+				    (third val))))
+	     elements))))
+
+(defun enime-get-available-qualities (embedded-url)
+  "returns an alist of available video qualities asociated with their url"
+  (when embedded-url
+    (let ((tree
+	   (enime-return-parsing-tree-from-request
+	    embedded-url nil)))
+      (enime--filter-downloads-qualities-tree tree))))
 
 
 
@@ -230,7 +243,7 @@ higuer quality, i.e.; the last element in alist"
 desired quality, if not available gets the higher quality"
   (let* ((video-url (enime-get-video-url embedded-url))
 	 (links (enime--get-video-links video-url))
-	 (alist-links (enime-get-available-qualities links))
+	 (alist-links (enime-get-available-qualities embedded-url))
 	 (quality (enime-set-quality alist-links desired-quality))
 					; maybe get the tmp url?
 	 )
@@ -257,7 +270,7 @@ in the range of available episodes "
 	(if (enime--good-video-url-p video-url)
 	    (make-process
 	     :name "mpv-enime"
-	     :command `("mpv" 
+	     :command `("mpv" ,(concat "--http-header-fields=referer: " embedded)
 			,video-url))
 	  nil)))))
 
