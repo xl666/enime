@@ -155,7 +155,8 @@ suports up to 104 keys, if more they are discarded"
 (defun enime--unfollow-action ()
   "Action for unfollowing an anime"
   (interactive)
-  (enime--unfollow-anime enime-current-anime-id)
+  (when (yes-or-no-p "Are you sure?")
+    (enime--unfollow-anime enime-current-anime-id))
   (enime-anime-transient))
 
 (defun enime--show-details-action ()

@@ -25,17 +25,17 @@
 
 (defun enime--update-db (new-alist)
   "Updates the db file with new alist, also takes care of cache"
-  (when new-alist
-    (let* ((store
-	    (condition-case nil
-		(eieio-persistent-read enime-storage-file Anime-Storage)
-	      (error nil))))
-      (when (not store)
-	(setf store (Anime-Storage)))
-      (oset store data
-	    new-alist)
-      (eieio-persistent-save store enime-storage-file)
-      (setq enime--followed-anime-alist-cache new-alist))))
+  
+  (let* ((store
+	  (condition-case nil
+	      (eieio-persistent-read enime-storage-file Anime-Storage)
+	    (error nil))))
+    (when (not store)
+      (setf store (Anime-Storage)))
+    (oset store data
+	  new-alist)
+    (eieio-persistent-save store enime-storage-file)
+    (setq enime--followed-anime-alist-cache new-alist)))
 
 (defun enime--follow-anime (anime-id
 			    current-episode
