@@ -1,4 +1,5 @@
-(load "esxml-query.el") ;; dependency 
+(load "esxml-query.el") ;; dependency
+(require mpv)
 
 (defgroup enime nil
   "Yet another Pomodoro timer implementation."
@@ -268,9 +269,9 @@ in the range of available episodes "
 	     (video-url (enime-get-links embedded desired-quality)))
 	(setq uurl video-url)
 	(if (enime--good-video-url-p video-url)
-	    (make-process
-	     :name "mpv-enime"
-	     :command `("mpv" ,(concat "--http-header-fields=referer: " embedded)
-			,video-url))
+	    (mpv-start
+	     (concat "--http-header-fields=referer: "
+		     embedded)
+	     video-url)
 	  nil)))))
 
