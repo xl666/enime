@@ -82,3 +82,17 @@
 	       (enime--get-followed-anime-alist))
     t))
 
+(defun enime--update-anime-property-db (anime-id property new-value)
+  "Changes the value of property in alist of plists saved in db"
+  (let* ((animes (enime--get-followed-anime-alist))
+	 (anime-plist
+	  (car (cdr
+		(assoc anime-id
+		       animes))))
+	 (new-plist (plist-put
+		     anime-plist
+		     property
+		     new-value)))
+    (setf (cdr (assoc anime-id animes))
+	  `(,new-plist))
+    (enime--update-db animes)))
