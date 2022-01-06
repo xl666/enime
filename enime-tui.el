@@ -137,9 +137,8 @@ suports up to 104 keys, if more they are discarded"
   (if
       (enime-play-episode enime-current-anime-id (number-to-string enime-episode-number) enime-desired-quality)
       (progn
-	(message "Enjoy!")
-	(transient-quit-all)
-	(enime--update-anime-property-db enime-current-anime-id :current-episode enime-episode-number))
+	(enime--update-anime-property-db enime-current-anime-id :current-episode enime-episode-number)
+	(transient-quit-all))
     (message "The episode cannot be retrieved")))
 
 (defun enime--follow-action ()

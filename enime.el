@@ -1,3 +1,5 @@
+;;; -*- lexical-binding: t -*-
+
 (load "esxml-query.el") ;; dependency
 (require 'mpv)
 
@@ -259,6 +261,41 @@ desired quality, if not available gets the higher quality"
       nil
     (string= "http" (substring video-url 0 4))))
 
+(defun enime--start-mpv-playback (embedded video-url)
+  "Starts playing and tracking video playback"
+  (mpv-start
+   (concat "--http-header-fields=referer: "
+	   embedded)
+   video-url)
+  (enime--wait-for-playback-start enime-current-anime-id))
+
+(defun enime--wait-for-playback-start (anime-id)
+  "Keeps remaining the user that the video is still loading"
+  (setq enime--loading-timer
+	(run-with-timer
+	 2 5
+	 (lambda ()
+	   (message "Video still loading")
+	   (when (not (mpv-live-p))
+	     (progn (cancel-timer enime--timer)
+		    (message "Cannot play video")))
+	   (when 
+	       (condition-case nil
+		   (mpv-get-playback-position)
+		 (error nil))
+	     (progn (cancel-timer enime--loading-timer)
+		    (enime--update-anime-property-db
+		     anime-id
+		     :current-episode-duration
+		     (mpv-get-duration))
+		    (message "Enjoy!!!")))))))
+
+(defun enime--update-anime-data-while-playing (anime-id)
+  "Updates current playback time in db"
+  
+  )
+
+
 (defun enime-play-episode (anime-id episode desired-quality)
   "opens an anime episode in mpv, it also checks if the episode is
 in the range of available episodes "
@@ -269,9 +306,8 @@ in the range of available episodes "
 	     (video-url (enime-get-links embedded desired-quality)))
 	(setq uurl video-url)
 	(if (enime--good-video-url-p video-url)
-	    (mpv-start
-	     (concat "--http-header-fields=referer: "
-		     embedded)
-	     video-url)
+	    (progn
+	      (enime--start-mpv-playback embedded video-url)
+	      t)
 	  nil)))))
 
