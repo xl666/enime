@@ -1,5 +1,5 @@
 (load "esxml-query.el") ;; dependency
-(require mpv)
+(require 'mpv)
 
 (defgroup enime nil
   "Yet another Pomodoro timer implementation."
