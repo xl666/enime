@@ -277,7 +277,7 @@ desired quality, if not available gets the higher quality"
 	 (lambda ()
 	   (message "Video still loading")
 	   (when (not (mpv-live-p))
-	     (progn (cancel-timer enime--timer)
+	     (progn (cancel-timer enime--loading-timer)
 		    (message "Cannot play video")))
 	   (when 
 	       (condition-case nil
@@ -288,12 +288,27 @@ desired quality, if not available gets the higher quality"
 		     anime-id
 		     :current-episode-duration
 		     (mpv-get-duration))
-		    (message "Enjoy!!!")))))))
+		    (message "Enjoy!!!")
+		    (enime--update-anime-data-while-playing
+		     anime-id)))))))
 
 (defun enime--update-anime-data-while-playing (anime-id)
   "Updates current playback time in db"
-  
-  )
+  (setq enime--playing-timer
+	(run-with-timer
+	 5 10
+	 (lambda ()
+	   (when (not (mpv-live-p))
+	     (cancel-timer enime--playing-timer))
+	   (let ((playback-time
+		  (condition-case nil
+		      (mpv-get-playback-position)
+		    (error nil))))
+	     (when playback-time
+	       (enime--update-anime-property-db
+		anime-id
+		:time-elapsed
+		playback-time)))))))
 
 
 (defun enime-play-episode (anime-id episode desired-quality)
