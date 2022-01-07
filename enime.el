@@ -8,7 +8,7 @@
   :group 'apps)
 
 
-(defcustom enime-base-url "https://www1.gogoanime.cm/"
+(defcustom enime-base-url "https://www3.gogoanime.cm/"
   "Gogo anime base url"
   :group 'enime
   :type 'string)
@@ -111,7 +111,7 @@ useful for regexp"
 	      ,(enime-get-anime-img-src-from-node node)))
 	  (esxml-query-all "div>a[href^=\"/category/\"]" tree)))
 
-(defun enime--collect-candidates-search-anime-pages (base-url pages)
+(defun enime--collect-candidates-search-anime-pages (base-url pages name)
   "Concatenates result candidates from all pages of a search anime"
   (reduce #'append
 	  (mapcar
@@ -133,7 +133,7 @@ a candidate is a list of id title img-src"
 	 (candidates-fist-page (enime--process-candites-search-anime-page tree)))
     (if (= 0 pages)
 	candidates-fist-page
-      (append candidates-fist-page (enime--collect-candidates-search-anime-pages url pages)))))
+      (append candidates-fist-page (enime--collect-candidates-search-anime-pages url pages name)))))
 
 (defun enime-get-min-episode (tree)
   "returns the first episode found from a parse treee"
