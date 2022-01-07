@@ -96,3 +96,13 @@
     (setf (cdr (assoc anime-id animes))
 	  `(,new-plist))
     (enime--update-db animes)))
+
+
+(defun enime--get-anime-property (anime-id property)
+  "Returns the value of a given property for the given anime"
+  (let* ((animes (enime--get-followed-anime-alist))
+	 (anime-plist
+	  (car (cdr
+		(assoc anime-id
+		       animes)))))
+    (plist-get anime-plist property)))
