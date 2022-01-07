@@ -51,6 +51,15 @@ enime--current-anime-search-results-alist key"
 	      (enime--get-anime-alist-from-key key)))))
     (if episode  episode 1)))
 
+(defun enime--get-opening-skip (key)
+  "Returns the corresponding value of opening skip"
+  (cdr (assoc 'opening-skip (enime--get-anime-alist-from-key key))))
+
+(defun enime--get-consider-finished-left (key)
+  "Returns the corresponding value of consider-finished-left"
+  (cdr (assoc 'consider-finished-left
+	      (enime--get-anime-alist-from-key key))))
+
 (defun enime--generate-keys (length)
   "Returns a list of length containing strings from a..z A..Z
 suports up to 104 keys, if more they are discarded"
@@ -304,6 +313,12 @@ hold in enime--current-anime-search-results-alist"
 					enime-current-anime-key))
 				 (setq enime-episode-number
 				       (enime--get-anime-current-episode
+					enime-current-anime-key))
+				 (setq enime-skip-opening-time
+				       (enime--get-opening-skip
+					enime-current-anime-key))
+				 (setq enime-finished-at-seconds-left
+				       (enime--get-consider-finished-left
 					enime-current-anime-key))
 				 (enime-anime-transient)))))))
 	       anime-alist-prefixes)))
