@@ -16,6 +16,9 @@
 (defvar enime-current-anime-id nil
   "Holds last selected id from an anime search")
 
+(defvar enime-skip-opening-time nil
+  "Holds the value for skip opening time")
+
 (defun enime--get-anime-alist-from-key (key)
   "Returns the alist elements of an anime from key"
   (transient-plist-to-alist (car (cdr (assoc key enime--current-anime-search-results-alist)))))
@@ -173,6 +176,26 @@ suports up to 104 keys, if more they are discarded"
      img-path
      (enime--get-anime-details enime-current-anime-id))))
 
+
+(transient-define-infix enime--set-skip-opening-time ()
+  "Stablishes skip opening time"
+  :class 'transient-lisp-variable
+  :variable 'enime-skip-opening-time
+  :key "-k"
+  :description "Skip opening at second"
+  :reader (lambda (&rest _)
+	    (let ((val
+		   (read-number 
+		    "Skip time in seconds: "
+		    enime-skip-opening-time)))
+	      (enime--update-anime-property-db
+	       enime-current-anime-id
+	       :opening-skip
+	       val)
+	      val)))
+
+
+
 (transient-define-prefix enime-anime-transient ()
   "Transient prefix for an anime"
   [:class transient-row
@@ -201,8 +224,8 @@ suports up to 104 keys, if more they are discarded"
 	 (enime--is-anime-followed-p
 	  enime-current-anime-id))
    ("u" "Unfollow anime" enime--unfollow-action)
-   ("r" "Resume anime" enime--show-details-action)
-   ("-k" "Skip opening at second" enime--show-details-action)
+   ("c" "Continue watching" enime--show-details-action)
+   (enime--set-skip-opening-time)
    ("-t" "Consider episode finished at seconds left" enime--show-details-action)
    ])
 
