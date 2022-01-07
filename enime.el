@@ -288,9 +288,18 @@ desired quality, if not available gets the higher quality"
 		     anime-id
 		     :current-episode-duration
 		     (mpv-get-duration))
+		    (enime--try-to-skip-opening anime-id)
 		    (message "Enjoy!!!")
 		    (enime--update-anime-data-while-playing
 		     anime-id)))))))
+
+(defun enime--try-to-skip-opening (anime-id)
+  "If skipping time greater than 0, it trys to skip opening"
+  (let ((skip-time
+	 (enime--get-anime-property anime-id :opening-skip)))
+    (when (and skip-time
+	       (> skip-time 0))
+      (mpv-seek skip-time))))
 
 (defun enime--update-anime-data-while-playing (anime-id)
   "Updates current playback time in db"
