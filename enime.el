@@ -247,9 +247,7 @@ desired quality, if not available gets the higher quality"
   (let* ((video-url (enime-get-video-url embedded-url))
 	 (links (enime--get-video-links video-url))
 	 (alist-links (enime-get-available-qualities embedded-url))
-	 (quality (enime-set-quality alist-links desired-quality))
-					; maybe get the tmp url?
-	 )
+	 (quality (enime-set-quality alist-links desired-quality)))
     (if quality
 	(enime--clean-url (car (cdr (assoc quality alist-links))))
       (enime--clean-url video-url)) ;; some videos do not have quality info, not sure if still useful

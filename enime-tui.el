@@ -106,7 +106,9 @@ suports up to 104 keys, if more they are discarded"
 (defun enime--search-for-followed-animes ()
   "Select followed anime"
   (interactive)
-  (enime-select-followed-anime-transient))
+  (if (enime--get-followed-anime-alist)
+      (enime-select-followed-anime-transient)
+    (message "No animes followed")))
 
 (transient-define-prefix enime-main-transient ()
   "Transient prefix with main menu"
@@ -286,12 +288,12 @@ hold in enime--current-anime-search-results-alist"
   "Generates an alist for prefix selection based on enime--followed-anime-alist-cache"
   (let* ((keys (enime--generate-keys
 		(length
-		 enime--followed-anime-alist-cache))))
+		 (enime--get-followed-anime-alist)))))
     (-zip-with (lambda (anime key)
 		 `(,key ,(append (list :key key)
 				 (car (cdr anime)))))
 	       (sort (copy-list
-		      enime--followed-anime-alist-cache)
+		      (enime--get-followed-anime-alist))
 		     (lambda (el1 el2) (string< (car el1) (car el2))))
 	       keys)))
 
