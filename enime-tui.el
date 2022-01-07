@@ -16,8 +16,11 @@
 (defvar enime-current-anime-id nil
   "Holds last selected id from an anime search")
 
-(defvar enime-skip-opening-time nil
+(defvar enime-skip-opening-time 0
   "Holds the value for skip opening time")
+
+(defvar enime-finished-at-seconds-left 0
+  "Holds the value in seconds for the time remaining to consider that an episode has finished, this is useful for going to the next episode with the continue action when the episode is at the ending for example")
 
 (defun enime--get-anime-alist-from-key (key)
   "Returns the alist elements of an anime from key"
@@ -195,6 +198,23 @@ suports up to 104 keys, if more they are discarded"
 	      val)))
 
 
+(transient-define-infix enime--set-finished-at-seconds-left ()
+  "Stablishes skip opening time"
+  :class 'transient-lisp-variable
+  :variable 'enime-finished-at-seconds-left
+  :key "-t"
+  :description "Consider episode finished at seconds left"
+  :reader (lambda (&rest _)
+	    (let ((val
+		   (read-number 
+		    "Episode finished at seconds left: "
+		    enime-finished-at-seconds-left)))
+	      (enime--update-anime-property-db
+	       enime-current-anime-id
+	       :consider-finished-left
+	       val)
+	      val)))
+
 
 (transient-define-prefix enime-anime-transient ()
   "Transient prefix for an anime"
@@ -226,7 +246,7 @@ suports up to 104 keys, if more they are discarded"
    ("u" "Unfollow anime" enime--unfollow-action)
    ("c" "Continue watching" enime--show-details-action)
    (enime--set-skip-opening-time)
-   ("-t" "Consider episode finished at seconds left" enime--show-details-action)
+   (enime--set-finished-at-seconds-left)
    ])
 
 (defun enime--set-select-anime-children (_)
