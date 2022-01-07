@@ -159,6 +159,8 @@ suports up to 104 keys, if more they are discarded"
 (defun enime--follow-action ()
   "Action for start following an anime"
   (interactive)
+  (setq enime-skip-opening-time 0)
+  (setq enime-finished-at-seconds-left 0)
   (enime--follow-anime enime-current-anime-id
 		       enime-episode-number
 		       (enime--get-anime-description-from-key
@@ -288,7 +290,10 @@ hold in enime--current-anime-search-results-alist"
     (-zip-with (lambda (anime key)
 		 `(,key ,(append (list :key key)
 				 (car (cdr anime)))))
-	       enime--followed-anime-alist-cache keys)))
+	       (sort (copy-list
+		      enime--followed-anime-alist-cache)
+		     (lambda (el1 el2) (string< (car el1) (car el2))))
+	       keys)))
 
 (defun enime--set-select-followed-anime-children (_)
   "Returns dinamically created suffixes acording with followed animes"
@@ -315,8 +320,9 @@ hold in enime--current-anime-search-results-alist"
 				       (enime--get-anime-current-episode
 					enime-current-anime-key))
 				 (setq enime-skip-opening-time
-				       (enime--get-opening-skip
-					enime-current-anime-key))
+				       (enime--get-anime-property
+					enime-current-anime-id
+					:opening-skip))
 				 (setq enime-finished-at-seconds-left
 				       (enime--get-consider-finished-left
 					enime-current-anime-key))
