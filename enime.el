@@ -259,16 +259,16 @@ desired quality, if not available gets the higher quality"
       nil
     (string= "http" (substring video-url 0 4))))
 
-(defun enime--start-mpv-playback (embedded video-url)
+(defun enime--start-mpv-playback (embedded video-url &optional skip-to)
   "Starts playing and tracking video playback"
   (mpv-start
    (concat "--http-header-fields=referer: "
 	   embedded)
    video-url)
-  (enime--wait-for-playback-start enime-current-anime-id))
+  (enime--wait-for-playback-start enime-current-anime-id skip-to))
 
-(defun enime--wait-for-playback-start (anime-id)
-  "Keeps remaining the user that the video is still loading"
+(defun enime--wait-for-playback-start (anime-id &optional skip-to)
+  "Keeps remaining the user that the video is still loading, skip-to for continue playing"
   (setq enime--loading-timer
 	(run-with-timer
 	 2 5
@@ -286,18 +286,21 @@ desired quality, if not available gets the higher quality"
 		     anime-id
 		     :current-episode-duration
 		     (mpv-get-duration))
-		    (enime--try-to-skip-opening anime-id)
+		    (enime--try-to-skip anime-id skip-to)
 		    (message "Enjoy!!!")
 		    (enime--update-anime-data-while-playing
 		     anime-id)))))))
 
-(defun enime--try-to-skip-opening (anime-id)
-  "If skipping time greater than 0, it trys to skip opening"
-  (let ((skip-time
-	 (enime--get-anime-property anime-id :opening-skip)))
-    (when (and skip-time
-	       (> skip-time 0))
-      (mpv-seek skip-time))))
+(defun enime--try-to-skip (anime-id &optional skip-to)
+  "Skips opening or skips to continue playing"
+  (if (and skip-to
+	   (> skip-to 0))
+      (mpv-seek skip-to)
+    (let ((skip-time
+	   (enime--get-anime-property anime-id :opening-skip)))
+      (when (and skip-time
+		 (> skip-time 0))
+	(mpv-seek skip-time)))))
 
 (defun enime--update-anime-data-while-playing (anime-id)
   "Updates current playback time in db"
@@ -318,7 +321,8 @@ desired quality, if not available gets the higher quality"
 		playback-time)))))))
 
 
-(defun enime-play-episode (anime-id episode desired-quality)
+(defun enime-play-episode (anime-id episode
+				    desired-quality &optional skip-to)
   "opens an anime episode in mpv, it also checks if the episode is
 in the range of available episodes "
   (let ((episodes-range (enime-episodes-range anime-id)))
@@ -329,7 +333,7 @@ in the range of available episodes "
 	(setq uurl video-url)
 	(if (enime--good-video-url-p video-url)
 	    (progn
-	      (enime--start-mpv-playback embedded video-url)
+	      (enime--start-mpv-playback embedded video-url skip-to)
 	      t)
 	  nil)))))
 

@@ -187,16 +187,32 @@ suports up to 104 keys, if more they are discarded"
 	    (second (read-multiple-choice "Choose quality: "
 					  '((?a "360") (?b "480") (?c " 720") (?d "1080"))))))
 
+
+(defun enime--try-play-episode (anime-id episode
+					 desired-quality
+					 &optional skip-to)
+  "Function for trying to play an episode with posible playback skip"
+  (message "Retrieving video, please wait...")
+  (if
+      (enime-play-episode anime-id
+			  episode
+			  desired-quality
+			  skip-to)
+      (progn
+	(enime--update-anime-property-db
+	 enime-current-anime-id
+	 :current-episode
+	 enime-episode-number)
+	(transient-quit-all))
+    (message "The episode cannot be retrieved")))
+
 (defun enime--play-episode-action ()
   "Action for playing an episode"
   (interactive)
-  (message "Retrieving video, please wait...")
-  (if
-      (enime-play-episode enime-current-anime-id (number-to-string enime-episode-number) enime-desired-quality)
-      (progn
-	(enime--update-anime-property-db enime-current-anime-id :current-episode enime-episode-number)
-	(transient-quit-all))
-    (message "The episode cannot be retrieved")))
+  (enime--try-play-episode
+   enime-current-anime-id
+   (number-to-string enime-episode-number)
+   enime-desired-quality))
 
 (defun enime--follow-action ()
   "Action for start following an anime"
@@ -210,6 +226,17 @@ suports up to 104 keys, if more they are discarded"
 		       (enime--get-anime-img-url-from-key
 			enime-current-anime-key))
   (enime-anime-transient))
+
+(defun enime--continue-action ()
+  "Continue playback were left"
+  (interactive)
+  (enime--try-play-episode
+   enime-current-anime-id
+   (number-to-string enime-episode-number)
+   enime-desired-quality
+   (enime--get-anime-property
+    enime-current-anime-id
+    :time-elapsed)))
 
 (defun enime--unfollow-action ()
   "Action for unfollowing an anime"
@@ -297,7 +324,7 @@ suports up to 104 keys, if more they are discarded"
 	 (enime--is-anime-followed-p
 	  enime-current-anime-id))
    ("u" "Unfollow anime" enime--unfollow-action)
-   ("c" "Continue watching" enime--show-details-action)
+   ("c" "Continue watching" enime--continue-action)
    (enime--set-skip-opening-time)
    (enime--set-finished-at-seconds-left)
    ])
