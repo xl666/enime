@@ -44,7 +44,7 @@ enime--current-anime-search-results-alist key"
 (defun enime--get-anime-current-episode (anime-id)
   "Only used for animes followd.
 Returns the current anime episode, for this it calculates if the current episode has finished, makes the appropiate changes in the database if necessary"
-  (let
+  (let*
       ((current-episode
 	(enime--get-anime-property
 	 anime-id
@@ -53,10 +53,15 @@ Returns the current anime episode, for this it calculates if the current episode
 	(enime--get-anime-property
 	 anime-id
 	 :time-elapsed))
-       (consider-finished-left
+       (consider-finished-left-temp
 	(enime--get-anime-property
 	 anime-id
 	 :consider-finished-left))
+       (consider-finished-left ;; at least 10 to sync with timers
+	(if
+	    (< consider-finished-left-temp 10)
+	    10
+	  consider-finished-left-temp))
        (current-episode-duration
 	(enime--get-anime-property
 	 anime-id
