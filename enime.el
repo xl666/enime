@@ -157,6 +157,45 @@ and last episode availabe"
       `(,first-ep ,last-ep))))
 
 
+(defun enime--can-continue-playing? (anime-id)
+  "T if the anime can continue playing, that is if there are more episodes or if the last episode has not completely watched "
+  (interactive)
+  (let* ((last-episode
+	  (string-to-number
+	   (second
+	    (enime-episodes-range anime-id))))
+	 (current-episode (enime--get-anime-property
+			   anime-id
+			   :current-episode))
+	 (time-elapsed (enime--get-anime-property
+			anime-id
+			:time-elapsed))
+	 (current-episode-duration
+	  (enime--get-anime-property
+	   anime-id
+	   :current-episode-duration))
+	 (consider-finished-left-temp
+	  (enime--get-anime-property
+	   anime-id
+	   :consider-finished-left))
+	 (consider-finished-left ;; at least 10 to sync with timers
+	  (if
+	      (< consider-finished-left-temp 10)
+	      10
+	    consider-finished-left-temp)))
+    (if (> current-episode last-episode)
+	nil
+      (if (< current-episode last-episode)
+	  t
+	(if (<= time-elapsed 0)
+	    t
+	  (when 
+	      (>
+	       (- current-episode-duration time-elapsed)
+	       consider-finished-left)
+	    t))))))
+
+
 (defun enime--404-url-p (url)
   "Checks if a url returns a 404 error"
   (let* ((text (enime-return-raw-text-from-request url)))

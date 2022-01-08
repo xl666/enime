@@ -227,16 +227,24 @@ suports up to 104 keys, if more they are discarded"
 			enime-current-anime-key))
   (enime-anime-transient))
 
+
+
 (defun enime--continue-action ()
   "Continue playback were left"
   (interactive)
-  (enime--try-play-episode
-   enime-current-anime-id
-   (number-to-string enime-episode-number)
-   enime-desired-quality
-   (enime--get-anime-property
-    enime-current-anime-id
-    :time-elapsed)))
+  (if (not (enime--can-continue-playing?
+	    enime-current-anime-id))
+      (progn
+	(message "No more content to play")
+	(enime-anime-transient))
+    (progn
+      (enime--try-play-episode
+       enime-current-anime-id
+       (number-to-string enime-episode-number)
+       enime-desired-quality
+       (enime--get-anime-property
+	enime-current-anime-id
+	:time-elapsed)))))
 
 (defun enime--unfollow-action ()
   "Action for unfollowing an anime"
