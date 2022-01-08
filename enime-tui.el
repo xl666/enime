@@ -41,15 +41,50 @@ enime--current-anime-search-results-alist key"
 enime--current-anime-search-results-alist key"
   (cdr (assoc 'img-src (enime--get-anime-alist-from-key key))))
 
-(defun enime--get-anime-current-episode (key)
-  "Returns the anime description from an
-enime--current-anime-search-results-alist key"
+(defun enime--get-anime-current-episode (anime-id)
+  "Only used for animes followd.
+Returns the current anime episode, for this it calculates if the current episode has finished, makes the appropiate changes in the database if necessary"
   (let
-      ((episode
-	(cdr (assoc
-	      'current-episode
-	      (enime--get-anime-alist-from-key key)))))
-    (if episode  episode 1)))
+      ((current-episode
+	(enime--get-anime-property
+	 anime-id
+	 :current-episode))
+       (time-elapsed
+	(enime--get-anime-property
+	 anime-id
+	 :time-elapsed))
+       (consider-finished-left
+	(enime--get-anime-property
+	 anime-id
+	 :consider-finished-left))
+       (current-episode-duration
+	(enime--get-anime-property
+	 anime-id
+	 :current-episode-duration))
+       (max-episode
+	(string-to-number (second (enime-episodes-range anime-id)))))
+    (if (>= current-episode max-episode)
+	max-episode
+      (if (and (> time-elapsed 0)
+	       (> current-episode-duration 0)
+	       (<=
+		(- current-episode-duration time-elapsed)
+		consider-finished-left))
+	  (progn
+	    (enime--update-anime-property-db
+	     anime-id
+	     :current-episode
+	     (+ current-episode 1))
+	    (enime--update-anime-property-db
+	     anime-id
+	     :time-elapsed
+	     0)
+	    (enime--update-anime-property-db
+	     anime-id
+	     :current-episode-duration
+	     0)
+	    (+ current-episode 1))
+	current-episode))))
 
 (defun enime--get-opening-skip (key)
   "Returns the corresponding value of opening skip"
@@ -243,7 +278,7 @@ suports up to 104 keys, if more they are discarded"
     :if (lambda ()
 	  (not (enime--is-anime-followed-p
 		enime-current-anime-id))))
-   ("p" "Play epidose" enime--play-episode-action)
+   ("p" "Play epidose from start" enime--play-episode-action)
    ("d" "Show anime details" enime--show-details-action)
    ("m" "Return to main menu" enime-main-transient)
    ("s" "Return to anime selection" enime-select-anime-transient
@@ -320,14 +355,15 @@ hold in enime--current-anime-search-results-alist"
 					enime-current-anime-key))
 				 (setq enime-episode-number
 				       (enime--get-anime-current-episode
-					enime-current-anime-key))
+					enime-current-anime-id))
 				 (setq enime-skip-opening-time
 				       (enime--get-anime-property
 					enime-current-anime-id
 					:opening-skip))
 				 (setq enime-finished-at-seconds-left
-				       (enime--get-consider-finished-left
-					enime-current-anime-key))
+				       (enime--get-anime-property
+					enime-current-anime-id
+					:consider-finished-left))
 				 (enime-anime-transient)))))))
 	       anime-alist-prefixes)))
 
