@@ -1,8 +1,8 @@
 ;;; enime.el --- Watch anime inside emacs -*- lexical-binding: t -*-
 
-;; Copyright (C) 2015-2020  Free Software Foundation, Inc.
+;; Copyright (C) 2022 xl666
 
-;; Author: Oleh Krehel <ohwoeowho@gmail.com>
+;; Author: xl666 <xavi004@gmail.com>
 ;; URL: https://github.com/xl666/enime
 ;; Version: 0.1
 
