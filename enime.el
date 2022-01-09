@@ -29,6 +29,7 @@
 (require 'transient)
 (require 'dash)
 (require 'request)
+(require 'esxml-query)
 
 (defgroup enime nil
   "Watch anime inside emacs"
