@@ -197,23 +197,18 @@ and last episode availabe"
   (let* ((text (enime-return-raw-text-from-request url)))
     (s-contains? "404" text)))
 
-(defun enime-get-embedded-video-link (anime-id episode &optional dub)
+(defun enime-get-embedded-video-link (anime-id episode &optional dub) 
   "returns the url of video asociated to anime episode
 optional parameter if the anime supports dub version"
-  (let* ((uri1 (if dub
-		   (concat "/" anime-id "-dub" "-" episode)
-		 (concat "/" anime-id "-" episode)))
-	 (uri2 (if dub
-		   (concat "/" anime-id "-dub" "-episode-" episode)
-		 (concat "/" anime-id "-episode-" episode)))
-	 (url1 (concat enime-base-url uri1))
-	 (url2 (concat enime-base-url uri2))
-	 (url (if (enime--404-url-p url1) url2 url1))
-	 (tree
-	  (enime-return-parsing-tree-from-request url nil)))
-    (xml-get-attribute
-     (esxml-query "li.dowloads>a" tree)
-     'href)))
+  (let* ((uri1 (if dub (concat "/" anime-id "-dub" "-" episode) 
+		 (concat "/" anime-id "-" episode))) 
+	 (uri2 (if dub (concat "/" anime-id "-dub" "-episode-" episode) 
+		 (concat "/" anime-id "-episode-" episode))) 
+	 (url1 (concat enime-base-url uri1)) 
+	 (url2 (concat enime-base-url uri2)) 
+	 (url (if (enime--404-url-p url1) url2 url1)) 
+	 (tree (enime-return-parsing-tree-from-request url nil))) 
+    (xml-get-attribute (esxml-query "a[rel=\"13\"]" tree) 'data-video)))
 
 
 (defun enime-get-video-url (embedded-url)
@@ -318,7 +313,7 @@ desired quality, if not available gets the higher quality"
 
 (defun enime--update-db (new-alist)
   "Updates the db file with new alist, also takes care of cache"
-  
+
   (let* ((store
 	  (condition-case nil
 	      (eieio-persistent-read enime-storage-file Anime-Storage)
@@ -678,7 +673,7 @@ suports up to 104 keys, if more they are discarded"
   :description "Skip opening at second"
   :reader (lambda (&rest _)
 	    (let ((val
-		   (read-number 
+		   (read-number
 		    "Skip time in seconds: "
 		    enime-skip-opening-time)))
 	      (enime--update-anime-property-db
@@ -696,7 +691,7 @@ suports up to 104 keys, if more they are discarded"
   :description "Consider episode finished at seconds left"
   :reader (lambda (&rest _)
 	    (let ((val
-		   (read-number 
+		   (read-number
 		    "Episode finished at seconds left: "
 		    enime-finished-at-seconds-left)))
 	      (enime--update-anime-property-db
@@ -892,7 +887,7 @@ hold in enime--current-anime-search-results-alist"
 	  t
 	(if (<= time-elapsed 0)
 	    t
-	  (when 
+	  (when
 	      (>
 	       (- current-episode-duration time-elapsed)
 	       consider-finished-left)
@@ -916,7 +911,7 @@ hold in enime--current-anime-search-results-alist"
 	   (when (not (mpv-live-p))
 	     (progn (cancel-timer enime--loading-timer)
 		    (message "Cannot play video")))
-	   (when 
+	   (when
 	       (condition-case nil
 		   (mpv-get-playback-position)
 		 (error nil))
