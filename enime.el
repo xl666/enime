@@ -1,4 +1,4 @@
-;;; enime.el --- Watch anime inside emacs -*- lexical-binding: t -*-
+;;; enime.el --- Watch anime with emacs -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2022 xl666
 
@@ -21,6 +21,10 @@
 ;; For a full copy of the GNU General Public License
 ;; see <http://www.gnu.org/licenses/>.
 
+
+;;; Commentary:
+;; 
+
 ;;; Code:
 
 ;;; General
@@ -32,29 +36,31 @@
 (require 'esxml-query)
 
 (defgroup enime nil
-  "Watch anime inside emacs"
+  "Watch anime inside Emacs."
   :group 'apps)
 
 
 (defcustom enime-base-url "https://www3.gogoanime.cm/"
-  "Gogo anime base url"
+  "Gogo anime base url."
   :group 'enime
   :type 'string)
 
 (defcustom enime-tmp-dir "/tmp"
-  "Directory to save temporal data like anime cover art"
+  "Directory to save temporal data like anime cover art."
   :group 'enime
   :type 'string)
 
 (defcustom enime-storage-file "/tmp/enime.db"
-  "File to storage followed animes"
+  "File to storage followed animes."
   :group 'enime
   :type 'string)
 
 ;;; scrapping
 
 (defun enime-return-parsing-tree-from-request (url params)
-  "makes the request, using html parsing, only works for get"
+  "Make the request, using html parsing, only works for get.
+Argument URL url to construct parsing tree.
+Argument PARAMS GET parameters."
   (let ((result nil))
     (request url
       :params params
@@ -68,8 +74,10 @@
     result))
 
 (defun enime-return-raw-text-from-request (url &optional headers params)
-  "makes a request and returns the obtained string without parsing,
-useful for regexp"
+  "Make a request and return the obtained string without parsing.
+Argument URL url to return html from
+Optional argument HEADERS http headers to consider.
+Optional argument PARAMS GET variables."
   (let ((result nil))
     (request url
       :params params
@@ -84,20 +92,22 @@ useful for regexp"
     result))
 
 (defun enime-get-anime-title-from-node (node)
-  "returns the anime title from a node"
+  "Return the anime title from a NODE."
   (xml-get-attribute node 'title))
 
 (defun enime-get-anime-id-from-node (node)
-  "returns the anime id from node"
+  "Return the anime id from NODE."
   (let ((href (xml-get-attribute node 'href)))
     (car (last (split-string href "/")))))
 
 (defun enime-get-anime-img-src-from-node (node)
-  "returns the image src value for an anime"
+  "Return the image src value for an anime.
+Argument NODE node from a parsing tree."
   (xml-get-attribute (esxml-query "img" node) 'src))
 
 (defun enime--extract-text-description-rec (&optional current-list)
-  "Returns a string containing the text of a node element"
+  "Return a string containing the text of a node element.
+Optional argument CURRENT-LIST to control recursion."
   (if (not current-list)  ""
     (if (stringp (car current-list))
 	(concat (s-trim (car current-list))
@@ -112,7 +122,8 @@ useful for regexp"
 	 (cdr current-list))))))
 
 (defun enime--get-anime-details (anime-id)
-  "Returs anime description from an anime id"
+  "Returs anime description from an anime id.
+Argument ANIME-ID anime to be processed."
   (let* ((uri (concat "/category/" anime-id))
 	 (url (concat enime-base-url uri))
 	 (tree
@@ -125,7 +136,8 @@ useful for regexp"
 		    (butlast nodes)))))
 
 (defun enime-normalize-search-string (string)
-  "gets ride of spaces and joins with -"
+  "Gets ride of spaces and joins with -.
+Argument STRING is the search string."
   (let ((parts (split-string string)))
     (reduce (lambda (str1 str2)
 	      (concat str1 "-" str2))
@@ -133,13 +145,14 @@ useful for regexp"
 
 
 (defun enime--pages-search-anime (tree)
-  "Returns the number of pages found in an anime search"
+  "Return the number of pages found in an anime search.
+Argument TREE parsing tree."
   (let ((pags (esxml-query-all ".pagination-list li" tree)))
     (length pags)))
 
 
 (defun enime--process-candites-search-anime-page (tree)
-  "Returns candidates found in a parse tree"
+  "Return candidates found in a parse TREE."
   (mapcar (lambda (node)
 	    `(,(enime-get-anime-id-from-node node)
 	      ,(enime-get-anime-title-from-node node)
@@ -147,7 +160,8 @@ useful for regexp"
 	  (esxml-query-all "div>a[href^=\"/category/\"]" tree)))
 
 (defun enime--collect-candidates-search-anime-pages (base-url pages name)
-  "Concatenates result candidates from all pages of a search anime"
+  "Concatenates result candidates from all PAGES of a search anime.
+Argument BASE-URL url for scrapping."
   (reduce #'append
 	  (mapcar
 	   (lambda (num)
@@ -157,7 +171,8 @@ useful for regexp"
 	   (number-sequence 2 pages))))
 
 (defun enime-search-anime (anime-name)
-  "searches for posible anime candidates from anime-name, returns a list of candidates
+  "Search for posible anime candidates from ANIME-NAME.
+Returns a list of candidates
 a candidate is a list of id title img-src"
   (let* ((name (enime-normalize-search-string anime-name))
 	 (uri "/search.html")
@@ -171,16 +186,18 @@ a candidate is a list of id title img-src"
       (append candidates-fist-page (enime--collect-candidates-search-anime-pages url pages name)))))
 
 (defun enime-get-min-episode (tree)
-  "returns the first episode found from a parse treee"
+  "Return the first episode found from a parse treee.
+Argument TREE parsing tree."
   (xml-get-attribute (car (esxml-query-all "#episode_page li a" tree)) 'ep_start))
 
 (defun enime-get-max-episode (tree)
-  "returns the last episode found from a parse treee"
+  "Return the last episode found from a parse treee.
+Argument TREE parsing tree."
   (xml-get-attribute (car (last (esxml-query-all "#episode_page li a" tree))) 'ep_end))
 
 (defun enime-episodes-range (anime-id)
-  "returns a numeric range (inclusive in both sides) of the first
-and last episode availabe"
+  "Return a numeric range (inclusive in both sides) of first and last episodes.
+Argument ANIME-ID anime of interest."
   (let* ((uri (concat "/category/" anime-id))
 	 (url (concat enime-base-url uri))
 	 (tree
@@ -193,26 +210,28 @@ and last episode availabe"
 
 
 (defun enime--404-url-p (url)
-  "Checks if a url returns a 404 error"
+  "Check if a URL return a 404 error."
   (let* ((text (enime-return-raw-text-from-request url)))
     (s-contains? "404" text)))
 
-(defun enime-get-embedded-video-link (anime-id episode &optional dub) 
-  "returns the url of video asociated to anime episode
-optional parameter if the anime supports dub version"
-  (let* ((uri1 (if dub (concat "/" anime-id "-dub" "-" episode) 
-		 (concat "/" anime-id "-" episode))) 
-	 (uri2 (if dub (concat "/" anime-id "-dub" "-episode-" episode) 
-		 (concat "/" anime-id "-episode-" episode))) 
-	 (url1 (concat enime-base-url uri1)) 
-	 (url2 (concat enime-base-url uri2)) 
-	 (url (if (enime--404-url-p url1) url2 url1)) 
-	 (tree (enime-return-parsing-tree-from-request url nil))) 
+(defun enime-get-embedded-video-link (anime-id episode &optional dub)
+  "Return the url of video asociated to anime EPISODE.
+Optional parameter if the anime supports dub version
+Argument ANIME-ID anime of interest."
+  (let* ((uri1 (if dub (concat "/" anime-id "-dub" "-" episode)
+		 (concat "/" anime-id "-" episode)))
+	 (uri2 (if dub (concat "/" anime-id "-dub" "-episode-" episode)
+		 (concat "/" anime-id "-episode-" episode)))
+	 (url1 (concat enime-base-url uri1))
+	 (url2 (concat enime-base-url uri2))
+	 (url (if (enime--404-url-p url1) url2 url1))
+	 (tree (enime-return-parsing-tree-from-request url nil)))
     (xml-get-attribute (esxml-query "a[rel=\"13\"]" tree) 'data-video)))
 
 
 (defun enime-get-video-url (embedded-url)
-  "returns video url from embedded url"
+  "Return video url from embedded url.
+Argument EMBEDDED-URL url to take as a bassis for scrapping."
   (let* (
 	 (prev (string-match "http[^?]+\\?\\(id=.*\\)" embedded-url))
 	 (beginning (match-beginning 1))
@@ -221,14 +240,16 @@ optional parameter if the anime supports dub version"
 
 
 (defun enime--get-video-links (video-url)
-  "Returns a list of available video urls with different qualities"
+  "Return a list of available video urls with different qualities.
+Argument VIDEO-URL scrappend video url."
   (let ((text (enime-return-raw-text-from-request
 	       video-url)))
     (mapcar (lambda (intern) (car intern))
 	    (s-match-strings-all "http.+\\.com\\/cdn.+expiry=[0-9]+" text))))
 
 (defun enime--filter-downloads-qualities-tree (tree)
-  "Returns an alist of available download urls per quality"
+  "Return an alist of available download urls per quality.
+Argument TREE parsing tree."
   (let* ((elements
 	  (esxml-query-all "div.dowload>a" tree)))
     (mapcar (lambda (element)
@@ -246,7 +267,8 @@ optional parameter if the anime supports dub version"
 	     elements))))
 
 (defun enime-get-available-qualities (embedded-url)
-  "returns an alist of available video qualities asociated with their url"
+  "Return an alist of available video qualities asociated with their url.
+Argument EMBEDDED-URL url for scrapping."
   (when embedded-url
     (let ((tree
 	   (enime-return-parsing-tree-from-request
@@ -256,8 +278,10 @@ optional parameter if the anime supports dub version"
 
 
 (defun enime-set-quality (alist-links desired-quality)
-  "cheks if the desired quality is available in alist, if not it returns the
-higuer quality, i.e.; the last element in alist"
+  "Cheks if the desired quality is available in alist.
+If not it returns the higuer quality, i.e.; the last element in alist
+Argument ALIST-LINKS alist of previously found video links.
+Argument DESIRED-QUALITY quality desired by user."
   (if (member desired-quality
 	      (mapcar (lambda (element)
 			(car element))
@@ -267,13 +291,15 @@ higuer quality, i.e.; the last element in alist"
 
 
 (defun enime--clean-url (url)
-  "Deletes amp; from url"
+  "Deletes amp; from URL."
   (reduce #'concat
 	  (split-string url "amp;")))
 
 (defun enime-get-links (embedded-url desired-quality)
-  "returns a video url with quality, tries to get video with
-desired quality, if not available gets the higher quality"
+  "Return a video url with quality, try to get video with desired quality.
+If quality not available gets the higher quality.
+Argument EMBEDDED-URL base url for scrapping.
+Argument DESIRED-QUALITY quality selected by user."
   (let* ((video-url (enime-get-video-url embedded-url))
 	 (links (enime--get-video-links video-url))
 	 (alist-links (enime-get-available-qualities embedded-url))
@@ -284,7 +310,8 @@ desired quality, if not available gets the higher quality"
     ))
 
 (defun enime--good-video-url-p (video-url)
-  "t if the video url is valid, nil in other case"
+  "T if the video url is valid, nil in other case.
+Argument VIDEO-URL url to check."
   (if (< (length video-url) 10)
       nil
     (string= "http" (substring video-url 0 4))))
@@ -292,14 +319,14 @@ desired quality, if not available gets the higher quality"
 ;;; persistence
 
 (defvar enime--followed-anime-alist-cache nil
-  "Holds the currently saved followed anime alist, the idea is to reduce disk access, this variable should be updated every time the contents of the db file change")
+  "Holds the currently saved followed anime alist, the idea is to reduce disk access, this variable should be updated every time the contents of the db file change.")
 
 (defclass Anime-Storage (eieio-persistent)
   ((data :initarg :menagerie :initform nil)
    (file :initform "")))
 
 (defun enime--get-followed-anime-alist ()
-  "Returns the currently saved followed anime alist"
+  "Return the currently saved followed anime alist."
   (if enime--followed-anime-alist-cache
       enime--followed-anime-alist-cache
     (let* ((store
@@ -312,7 +339,8 @@ desired quality, if not available gets the higher quality"
 	enime--followed-anime-alist-cache))))
 
 (defun enime--update-db (new-alist)
-  "Updates the db file with new alist, also takes care of cache"
+  "Update the db file with new alist, also takes care of cache.
+Argument NEW-ALIST alist that substitute current db."
 
   (let* ((store
 	  (condition-case nil
@@ -329,7 +357,11 @@ desired quality, if not available gets the higher quality"
 			    current-episode
 			    description
 			    img-src)
-  "Store new anime to follow"
+  "Store new anime to follow.
+Argument ANIME-ID anime of interest
+Argument CURRENT-EPISODE number of episode to save in db.
+Argument DESCRIPTION scrapped anime description.
+Argument IMG-SRC scrapped cover art url."
   (let* (
 	 (animes (enime--get-followed-anime-alist))
 	 (element `(,anime-id
@@ -358,20 +390,23 @@ desired quality, if not available gets the higher quality"
 	(message "Following anime")))))
 
 (defun enime--unfollow-anime (anime-id)
-  "Unfollow an anime, that is, delete it from db"
+  "Unfollow an anime, that is, delete it from db.
+Argument ANIME-ID anime of interest."
   (enime--update-db (assoc-delete-all
 		     anime-id
 		     (enime--get-followed-anime-alist))))
 
 
 (defun enime--is-anime-followed-p (anime-id)
-  "Predicate to determine if an anime is being followed"
+  "Predicate to determine if an anime is being followed.
+Argument ANIME-ID anime of interest."
   (when (assoc anime-id
 	       (enime--get-followed-anime-alist))
     t))
 
 (defun enime--update-anime-property-db (anime-id property new-value)
-  "Changes the value of property in alist of plists saved in db"
+  "Change the value of PROPERTY in alist of plists saved in db.
+Argument ANIME-ID anime of interest."
   (let* ((animes (enime--get-followed-anime-alist))
 	 (anime-plist
 	  (car (cdr
@@ -387,7 +422,8 @@ desired quality, if not available gets the higher quality"
 
 
 (defun enime--get-anime-property (anime-id property)
-  "Returns the value of a given property for the given anime"
+  "Return the value of a given PROPERTY for the given anime.
+Argument ANIME-ID anime of interest."
   (let* ((animes (enime--get-followed-anime-alist))
 	 (anime-plist
 	  (car (cdr
@@ -399,48 +435,47 @@ desired quality, if not available gets the higher quality"
 ;;; TUI
 
 (defvar enime--current-anime-search-results-alist nil
-  "Holds the value of the currently searched anime")
+  "Holds the value of the currently searched anime.")
 
 (defvar enime-episode-number 1
-  "Selected episode number")
+  "Selected episode number.")
 
 (defvar enime-current-anime-key nil
-  "Holds last selected key from an anime search")
+  "Holds last selected key from an anime search.")
 
 (defvar enime-desired-quality "1080"
-  "Desired episode quiality, may not be availabe")
+  "Desired episode quiality, may not be availabe.")
 
 (defvar enime-current-anime-id nil
-  "Holds last selected id from an anime search")
+  "Holds last selected id from an anime search.")
 
 (defvar enime-skip-opening-time 0
-  "Holds the value for skip opening time")
+  "Holds the value for skip opening time.")
 
 (defvar enime-finished-at-seconds-left 0
-  "Holds the value in seconds for the time remaining to consider that an episode has finished, this is useful for going to the next episode with the continue action when the episode is at the ending for example")
+  "Holds the value in seconds for the time remaining to consider that an episode has finished, this is useful for going to the next episode with the continue action when the episode is at the ending for example.")
 
 (defun enime--get-anime-alist-from-key (key)
-  "Returns the alist elements of an anime from key"
+  "Return the alist elements of an anime from KEY."
   (transient-plist-to-alist (car (cdr (assoc key enime--current-anime-search-results-alist)))))
 
 (defun enime--get-anime-description-from-key (key)
-  "Returns the anime description from an
-enime--current-anime-search-results-alist key"
+  "Return the anime description from an `enime--current-anime-search-results-alist' KEY."
   (cdr (assoc 'description (enime--get-anime-alist-from-key key))))
 
 (defun enime--get-anime-id-from-key (key)
-  "Returns the anime description from an
-enime--current-anime-search-results-alist key"
+  "Return the anime description from an `enime--current-anime-search-results-alist' KEY."
   (cdr (assoc 'id (enime--get-anime-alist-from-key key))))
 
 (defun enime--get-anime-img-url-from-key (key)
-  "Returns the anime description from an
-enime--current-anime-search-results-alist key"
+  "Return the anime description from an `enime--current-anime-search-results-alist' KEY."
   (cdr (assoc 'img-src (enime--get-anime-alist-from-key key))))
 
 (defun enime--get-anime-current-episode (anime-id)
   "Only used for animes followd.
-Returns the current anime episode, for this it calculates if the current episode has finished, makes the appropiate changes in the database if necessary"
+Returns the current anime episode, check if the current episode has finished.
+ Make the appropiate changes in the database if necessary
+Argument ANIME-ID anime of interest."
   (let*
       ((current-episode
 	(enime--get-anime-property
@@ -489,17 +524,18 @@ Returns the current anime episode, for this it calculates if the current episode
 	current-episode))))
 
 (defun enime--get-opening-skip (key)
-  "Returns the corresponding value of opening skip"
+  "Return the corresponding value of opening skip.
+Argument KEY alist key."
   (cdr (assoc 'opening-skip (enime--get-anime-alist-from-key key))))
 
 (defun enime--get-consider-finished-left (key)
-  "Returns the corresponding value of consider-finished-left"
+  "Return the corresponding value of consider-finished-left.
+Argument KEY alist key."
   (cdr (assoc 'consider-finished-left
 	      (enime--get-anime-alist-from-key key))))
 
 (defun enime--generate-keys (length)
-  "Returns a list of length containing strings from a..z A..Z
-suports up to 104 keys, if more they are discarded"
+  "Return a list of LENGTH containing strings from a..z A..Z suports up to 104 keys, if more they are discarded."
   (-slice (mapcar (lambda (val) val)
 		  (append
 		   (mapcar
@@ -521,7 +557,7 @@ suports up to 104 keys, if more they are discarded"
 	  0 length))
 
 (defun enime--generate-anime-result-alist (search-string)
-  "Returns an alist of animes found from search-string"
+  "Return an alist of animes found from SEARCH-STRING."
   (let* ((results (enime-search-anime search-string))
 	 (keys (enime--generate-keys (length results))))
     (-zip-with (lambda (anime key)
@@ -531,7 +567,7 @@ suports up to 104 keys, if more they are discarded"
 	       results keys)))
 
 (defun enime--search-for-anime ()
-  "Searches an anime for tansient menu"
+  "Search an anime for tansient menu."
   (interactive)
   (setq enime--current-anime-search-results-alist
 	(enime--generate-anime-result-alist
@@ -541,14 +577,14 @@ suports up to 104 keys, if more they are discarded"
     (message "No results found")))
 
 (defun enime--search-for-followed-animes ()
-  "Select followed anime"
+  "Select followed anime."
   (interactive)
   (if (enime--get-followed-anime-alist)
       (enime-select-followed-anime-transient)
     (message "No animes followed")))
 
 (transient-define-prefix enime-main-transient ()
-  "Transient prefix with main menu"
+  "Transient prefix with main menu."
   ["Commands"
    :class transient-row
    ("s" "Anime search" enime--search-for-anime :transient t)
@@ -558,7 +594,7 @@ suports up to 104 keys, if more they are discarded"
   (transient-setup 'enime-main-transient))
 
 (transient-define-infix enime--set-anime-episode ()
-  "Sets the episode to watch"
+  "Sets the episode to watch."
   :class 'transient-lisp-variable
   :variable 'enime-episode-number
   :key "-e"
@@ -575,7 +611,7 @@ suports up to 104 keys, if more they are discarded"
 
 
 (transient-define-infix enime--set-desired-quality ()
-  "Sets desired quality of episode, may not be available"
+  "Sets desired quality of episode, may not be available."
   :class 'transient-lisp-variable
   :variable 'enime-desired-quality
   :description "Desired video quiality"
@@ -588,7 +624,8 @@ suports up to 104 keys, if more they are discarded"
 (defun enime--try-play-episode (anime-id episode
 					 desired-quality
 					 &optional skip-to)
-  "Function for trying to play an episode with posible playback skip"
+  "Function for trying to play an EPISODE with posible playback skip.
+Argument ANIME-ID anime of interest."
   (message "Retrieving video, please wait...")
   (if
       (enime-play-episode anime-id
@@ -604,7 +641,7 @@ suports up to 104 keys, if more they are discarded"
     (message "The episode cannot be retrieved")))
 
 (defun enime--play-episode-action ()
-  "Action for playing an episode"
+  "Action for playing an episode."
   (interactive)
   (enime--try-play-episode
    enime-current-anime-id
@@ -612,7 +649,7 @@ suports up to 104 keys, if more they are discarded"
    enime-desired-quality))
 
 (defun enime--follow-action ()
-  "Action for start following an anime"
+  "Action for start following an anime."
   (interactive)
   (setq enime-skip-opening-time 0)
   (setq enime-finished-at-seconds-left 0)
@@ -627,7 +664,7 @@ suports up to 104 keys, if more they are discarded"
 
 
 (defun enime--continue-action ()
-  "Continue playback were left"
+  "Continue playback were left."
   (interactive)
   (if (not (enime--can-continue-playing?
 	    enime-current-anime-id))
@@ -644,14 +681,14 @@ suports up to 104 keys, if more they are discarded"
 	:time-elapsed)))))
 
 (defun enime--unfollow-action ()
-  "Action for unfollowing an anime"
+  "Action for unfollowing an anime."
   (interactive)
   (when (yes-or-no-p "Are you sure?")
     (enime--unfollow-anime enime-current-anime-id))
   (enime-anime-transient))
 
 (defun enime--show-details-action ()
-  "Action for displaying anime details"
+  "Action for displaying anime details."
   (interactive)
   (let ((img-path
 	 (format "%s/%s.jpg"
@@ -666,7 +703,7 @@ suports up to 104 keys, if more they are discarded"
 
 
 (transient-define-infix enime--set-skip-opening-time ()
-  "Stablishes skip opening time"
+  "Stablishes skip opening time."
   :class 'transient-lisp-variable
   :variable 'enime-skip-opening-time
   :key "-k"
@@ -684,7 +721,7 @@ suports up to 104 keys, if more they are discarded"
 
 
 (transient-define-infix enime--set-finished-at-seconds-left ()
-  "Stablishes skip opening time"
+  "Stablishes skip opening time."
   :class 'transient-lisp-variable
   :variable 'enime-finished-at-seconds-left
   :key "-t"
@@ -702,7 +739,7 @@ suports up to 104 keys, if more they are discarded"
 
 
 (transient-define-prefix enime-anime-transient ()
-  "Transient prefix for an anime"
+  "Transient prefix for an anime."
   [:class transient-row
 	  :description
 	  (lambda () (enime--get-anime-description-from-key enime-current-anime-key))
@@ -735,8 +772,7 @@ suports up to 104 keys, if more they are discarded"
    ])
 
 (defun enime--set-select-anime-children (_)
-  "Returns dinamically created suffixes acording with anime results
-hold in enime--current-anime-search-results-alist"
+  "Return dinamically created suffixes acording with anime results hold in `enime--current-anime-search-results-alist'."
   (cl-mapcan (lambda (anime-result)
                (let-alist (transient-plist-to-alist
 			   (car (cdr anime-result)))
@@ -757,7 +793,7 @@ hold in enime--current-anime-search-results-alist"
              enime--current-anime-search-results-alist))
 
 (defun enime--generate-followed-anime-alist ()
-  "Generates an alist for prefix selection based on enime--followed-anime-alist-cache"
+  "Generate an alist for prefix selection based on `enime--followed-anime-alist-cache'."
   (let* ((keys (enime--generate-keys
 		(length
 		 (enime--get-followed-anime-alist)))))
@@ -770,7 +806,7 @@ hold in enime--current-anime-search-results-alist"
 	       keys)))
 
 (defun enime--set-select-followed-anime-children (_)
-  "Returns dinamically created suffixes acording with followed animes"
+  "Return dinamically created suffixes acording with followed animes."
   (let* ((anime-alist-prefixes
 	  (enime--generate-followed-anime-alist)))
     (setq
@@ -813,13 +849,14 @@ hold in enime--current-anime-search-results-alist"
    :setup-children enime--set-select-followed-anime-children])
 
 (defun enime--restore-anime-transient-after-details ()
-  "After quitting a details buffer, return to previous anime transient"
+  "After quitting a details buffer, return to previous anime transient."
   (interactive)
   (kill-current-buffer)
   (enime-anime-transient))
 
 (defun enime--display-anime-details (img-file-path details)
-  "Opens a special buffer showing an anime image and text details"
+  "Opens a special buffer showing an anime image and text DETAILS.
+Argument IMG-FILE-PATH path of downloaded covert art file."
   (condition-case nil
       (kill-buffer "enime-anime-details")
     (error nil))
@@ -836,12 +873,13 @@ hold in enime--current-anime-search-results-alist"
       (beginning-of-buffer))))
 
 (defun enime--download-cover-art (img-url out-path)
-  "Downloads and saves a cover art image from img-url"
+  "Downloads and save a cover art image from IMG-URL.
+Argument OUT-PATH directory path for saving downloaded cover art."
   (shell-command (format "curl -o %s %s &> /dev/null" out-path img-url)))
 
 
 (define-minor-mode enime--details-mode
-  "Minor mode for keybinding specific to detail bufers"
+  "Minor mode for keybinding specific to detail bufers."
   nil
   :lighter "anime details")
 
@@ -856,7 +894,8 @@ hold in enime--current-anime-search-results-alist"
 ;;; playback
 
 (defun enime--can-continue-playing? (anime-id)
-  "T if the anime can continue playing, that is if there are more episodes or if the last episode has not completely watched "
+  "T if the anime can continue playing.
+Argument ANIME-ID anime of interest."
   (interactive)
   (let* ((last-episode
 	  (string-to-number
@@ -894,7 +933,10 @@ hold in enime--current-anime-search-results-alist"
 	    t))))))
 
 (defun enime--start-mpv-playback (embedded video-url &optional skip-to)
-  "Starts playing and tracking video playback"
+  "Start playing and tracking video playback.
+Argument EMBEDDED url for referencing.
+Argument VIDEO-URL video url to play.
+Optional argument SKIP-TO seconds to go forward in video."
   (mpv-start
    (concat "--http-header-fields=referer: "
 	   embedded)
@@ -902,7 +944,9 @@ hold in enime--current-anime-search-results-alist"
   (enime--wait-for-playback-start enime-current-anime-id skip-to))
 
 (defun enime--wait-for-playback-start (anime-id &optional skip-to)
-  "Keeps remaining the user that the video is still loading, skip-to for continue playing"
+  "Keep telling the user that the video is still loading.
+Argument ANIME-ID anime of interest.
+Optional argument SKIP-TO seconds to skip forward."
   (setq enime--loading-timer
 	(run-with-timer
 	 2 5
@@ -926,7 +970,9 @@ hold in enime--current-anime-search-results-alist"
 		     anime-id)))))))
 
 (defun enime--try-to-skip (anime-id &optional skip-to)
-  "Skips opening or skips to continue playing"
+  "Skips opening or skips to continue playing.
+Argument ANIME-ID anime of interest.
+Optional argument SKIP-TO seconds to skip forward."
   (if (and skip-to
 	   (> skip-to 0))
       (mpv-seek skip-to)
@@ -937,7 +983,8 @@ hold in enime--current-anime-search-results-alist"
 	(mpv-seek skip-time)))))
 
 (defun enime--update-anime-data-while-playing (anime-id)
-  "Updates current playback time in db"
+  "Update current playback time in db.
+Argument ANIME-ID anime of interest."
   (setq enime--playing-timer
 	(run-with-timer
 	 5 10
@@ -957,8 +1004,8 @@ hold in enime--current-anime-search-results-alist"
 
 (defun enime-play-episode (anime-id episode
 				    desired-quality &optional skip-to)
-  "opens an anime episode in mpv, it also checks if the episode is
-in the range of available episodes "
+  "Opens an anime EPISODE in mpv.
+Argument ANIME-ID anime of interest."
   (let ((episodes-range (enime-episodes-range anime-id)))
     (when (and (>= (string-to-number episode) (string-to-number (car episodes-range)))
 	       (<= (string-to-number episode) (string-to-number (second episodes-range))))
@@ -972,3 +1019,7 @@ in the range of available episodes "
 	  nil)))))
 
 (provide 'enime)
+
+(provide 'enime)
+
+;;; enime.el ends here
