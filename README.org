@@ -1,0 +1,107 @@
+#+title: Enime
+
+Watch anime using Emacs.
+
+This package is a kind-of elisp re-implementation of [[https://github.com/pystardust/ani-cli][ani-cli]] using the
+same video scrapping methods but featuring a [[https://github.com/magit/transient/blob/master/lisp/transient.el][transient]] based TUI,
+because, subjectively, transient is a better UI than a CLI.
+
+This package features:
+- Search for anime: up to 100 results can be selected (scroll the list with C-v or equivalent if necessary)
+- Play an episode: you can see available episodes and select one for playing
+- Anime details: shows an anime cover art and related information
+- Anime following: if you want to keep track of an anime's episodes,
+  and establish some configuration, such as skipping the opening  and
+  setting desired video quality
+- Playback enhancements: Skip opening, resume episode, automatically
+  advance episode when finishing an episode
+
+As this packages uses [[https://github.com/kljohann/mpv.el][mpv.el]] you can also benefit from all its
+functionality to control the playback.
+
+* Installation
+At this moment this package is not available in any emacs package repository, but you can manually load it as explained bellow.
+
+**  Emacs package dependencies 
+Enime depends on some packages available on Elpa or Melpa:
+- [[https://github.com/magit/transient][transient]]
+- [[http://elpa.gnu.org/packages/dash.html][dash]]
+- [[https://github.com/tkf/emacs-request][request]]
+- [[https://github.com/kljohann/mpv.el][mpv.el]]
+
+** System dependencies
+- curl
+- mpv
+
+** Installation steps
+- Install dependencies
+- Clone this repository
+- Add the new directory to load path (in your init.el):
+#+begin_src emacs-lisp
+  (add-to-list 'load-path "enime/path")
+#+end_src
+- Require enime:
+#+begin_src emacs-lisp
+  (require 'enime)
+#+end_src
+
+You can obviously install by other means such as straight.
+
+** Basic usage
+There are two interactive functions for users:
+- enime-main-transient: offers the functionality to search for an
+  anime and to select a followed anime
+- enime-anime-transient: offers the actions to play, follow/unfollow,
+  and configure the last selected anime (from a search or followed
+  anime).
+
+There are other interactive functions defined but they are part of the
+TUI and not intended to be used directly.
+
+** Customization
+Some variables can be customized:
+- enime-base-url ("https://www3.gogoanime.cm/" by default): enime uses
+  gogoanime (as ani-cli) as provider, but the url may vary according
+  to your region. You can check which url you get when visiting the
+  site. This may be improved in the future
+- enime-tmp-dir ( "/tmp" by default): Directory to save temporal data like anime cover art
+- enime-storage-file ("/tmp/enime.db" by default): File to storage
+  followed animes data
+
+  So a possible minimal configuration for your init.el may be (after
+  requiring enime):
+#+begin_src emacs-lisp
+  (setq enime-storage-file "~/enime.db")
+  
+#+end_src
+
+
+** Limitations
+- As this package (and also ani-cli) uses web scrapping as a way to get
+  anime videos, it is possible, and in fact frequent, that some videos
+  do not load, or even that the main video source stops working as
+  changes in anime CDNs are frequent. I do not plan to actively look
+  for new ways to scrap content in order to fix problems with videos,
+  I will keep, at the time, depending on the ani-cli community for
+  that. This also means that sometimes videos could not be retrieved
+  until solutions are found by the ani-cli community and ported to
+  enime
+- Only mpv is supported and there are no plans for supporting other
+  video players in the near future
+- For EXWM users: there is a known bug (at the time of this writing)
+  that causes emacs to hang (or don't properly get input events) when
+  a transient buffer is shown along with an EXWM buffer. This posses a
+  problem when trying to open mpv to play an anime episode, for this
+  reason, when selecting an action that opens mpv, the transient is
+  also automatically quit.  Nevertheless, it is suggested to be aware
+  of this problem
+- You can see up to 100 animes in search results: this number could be
+  grater for a given search (for example "dragon") but more results
+  become too impractical to handle. You can always put more details in
+  your search
+- You can follow up to 104 animes: I believe this number is already
+  impractical as the selection overflows. You can always unfollow an
+  anime to make room if necessary
+
+** Future work
+- Maybe add episode downloading

@@ -46,7 +46,7 @@
   :group 'enime
   :type 'string)
 
-(defcustom enime-storage-file "/tmp/data.db"
+(defcustom enime-storage-file "/tmp/enime.db"
   "File to storage followed animes"
   :group 'enime
   :type 'string)
