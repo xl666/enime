@@ -3,7 +3,7 @@
 Watch anime using Emacs.
 
 This package is a kind-of elisp re-implementation of [[https://github.com/pystardust/ani-cli][ani-cli]] using the
-same video scrapping methods but featuring a [[https://github.com/magit/transient/blob/master/lisp/transient.el][transient]] based TUI,
+same video scrapping methods but featuring a [[https://github.com/magit/transient][transient]] based TUI,
 because, subjectively, transient is a better UI than a CLI.
 
 This package features:
@@ -20,12 +20,13 @@ As this packages uses [[https://github.com/kljohann/mpv.el][mpv.el]] you can als
 functionality to control the playback.
 
 * Installation
-At this moment this package is not available in any emacs package repository, but you can manually load it as explained bellow.
+This package is not available in any emacs package repository, but you can manually load it as explained bellow.
 
 **  Emacs package dependencies 
 Enime depends on some packages available on Elpa or Melpa:
 - [[https://github.com/magit/transient][transient]]
 - [[http://elpa.gnu.org/packages/dash.html][dash]]
+- [[https://github.com/magnars/s.el][s.el]]
 - [[https://github.com/tkf/emacs-request][request]]
 - [[https://github.com/kljohann/mpv.el][mpv.el]]
 
