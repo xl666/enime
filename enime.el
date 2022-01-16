@@ -129,19 +129,19 @@ Argument ANIME-ID anime to be processed."
 	 (tree
 	  (enime-return-parsing-tree-from-request url nil))
 	 (nodes (esxml-query-all "div.anime_info_body_bg>p.type" tree)))
-    (reduce (lambda (str1 str2)
-	      (concat str1 "\n\n" str2))
-	    (mapcar (lambda (node)
-		      (enime--extract-text-description-rec node))
-		    (butlast nodes)))))
+    (cl-reduce (lambda (str1 str2)
+		 (concat str1 "\n\n" str2))
+	       (mapcar (lambda (node)
+			 (enime--extract-text-description-rec node))
+		       (butlast nodes)))))
 
 (defun enime-normalize-search-string (string)
   "Gets ride of spaces and joins with -.
 Argument STRING is the search string."
   (let ((parts (split-string string)))
-    (reduce (lambda (str1 str2)
-	      (concat str1 "-" str2))
-	    parts)))
+    (cl-reduce (lambda (str1 str2)
+		 (concat str1 "-" str2))
+	       parts)))
 
 
 (defun enime--pages-search-anime (tree)
@@ -162,13 +162,13 @@ Argument TREE parsing tree."
 (defun enime--collect-candidates-search-anime-pages (base-url pages name)
   "Concatenates result candidates from all PAGES of a search anime.
 Argument BASE-URL url for scrapping."
-  (reduce #'append
-	  (mapcar
-	   (lambda (num)
-	     (let ((tree
-		    (enime-return-parsing-tree-from-request base-url `(("keyword" . ,name) ("page" . ,(number-to-string num))))))
-	       (enime--process-candites-search-anime-page tree)))
-	   (number-sequence 2 pages))))
+  (cl-reduce #'append
+	     (mapcar
+	      (lambda (num)
+		(let ((tree
+		       (enime-return-parsing-tree-from-request base-url `(("keyword" . ,name) ("page" . ,(number-to-string num))))))
+		  (enime--process-candites-search-anime-page tree)))
+	      (number-sequence 2 pages))))
 
 (defun enime-search-anime (anime-name)
   "Search for posible anime candidates from ANIME-NAME.
@@ -292,8 +292,8 @@ Argument DESIRED-QUALITY quality desired by user."
 
 (defun enime--clean-url (url)
   "Deletes amp; from URL."
-  (reduce #'concat
-	  (split-string url "amp;")))
+  (cl-reduce #'concat
+	     (split-string url "amp;")))
 
 (defun enime-get-links (embedded-url desired-quality)
   "Return a video url with quality, try to get video with desired quality.

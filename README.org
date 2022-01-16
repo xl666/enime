@@ -29,6 +29,7 @@ Enime depends on some packages available on Elpa or Melpa:
 - [[https://github.com/magnars/s.el][s.el]]
 - [[https://github.com/tkf/emacs-request][request]]
 - [[https://github.com/kljohann/mpv.el][mpv.el]]
+- [[https://github.com/tali713/esxml][esxml]]
 
 ** System dependencies
 - curl
