@@ -255,15 +255,15 @@ Argument TREE parsing tree."
     (mapcar (lambda (element)
 	      (let* ((prev (string-match
 			    "\\([0-9][0-9][0-9][0-9]?\\)"
-			    (third element)))
+			    (cl-third element)))
 		     (beginning (match-beginning 1))
 		     (end (match-end 1)))
-		`(,(substring (third element) beginning end)
+		`(,(substring (cl-third element) beginning end)
 		  ,(xml-get-attribute element 'href))))
 	    (cl-remove-if
 	     (lambda (val)
 	       (not (s-starts-with? "Download\n"
-				    (third val))))
+				    (cl-third val))))
 	     elements))))
 
 (defun enime-get-available-qualities (embedded-url)
@@ -518,7 +518,7 @@ Argument ANIME-ID anime of interest."
 	 anime-id
 	 :current-episode-duration))
        (max-episode
-	(string-to-number (second (enime-episodes-range anime-id)))))
+	(string-to-number (cl-second (enime-episodes-range anime-id)))))
     (if (>= current-episode max-episode)
 	max-episode
       (if (and (> time-elapsed 0)
@@ -581,8 +581,8 @@ Argument KEY alist key."
 	 (keys (enime--generate-keys (length results))))
     (-zip-with (lambda (anime key)
 		 `(,key (:key ,key :id ,(car anime)
-			      :description ,(second anime)
-			      :img-src ,(third anime))))
+			      :description ,(cl-second anime)
+			      :img-src ,(cl-third anime))))
 	       results keys)))
 
 (defun enime--search-for-anime ()
@@ -625,7 +625,7 @@ Argument KEY alist key."
 	      (read-number (format
 			    "Episode (%s-%s available): "
 			    (car ep-range)
-			    (second ep-range))
+			    (cl-second ep-range))
 			   enime-episode-number))))
 
 
@@ -636,8 +636,8 @@ Argument KEY alist key."
   :description "Desired video quiality"
   :key "-q"
   :reader (lambda (&rest _)
-	    (second (read-multiple-choice "Choose quality: "
-					  '((?a "360") (?b "480") (?c " 720") (?d "1080"))))))
+	    (cl-second (read-multiple-choice "Choose quality: "
+					     '((?a "360") (?b "480") (?c " 720") (?d "1080"))))))
 
 
 (defun enime--try-play-episode (anime-id episode
@@ -918,7 +918,7 @@ Argument ANIME-ID anime of interest."
   (interactive)
   (let* ((last-episode
 	  (string-to-number
-	   (second
+	   (cl-second
 	    (enime-episodes-range anime-id))))
 	 (current-episode (enime--get-anime-property
 			   anime-id
@@ -1027,10 +1027,10 @@ Argument ANIME-ID anime of interest."
 Argument ANIME-ID anime of interest."
   (let ((episodes-range (enime-episodes-range anime-id)))
     (when (and (>= (string-to-number episode) (string-to-number (car episodes-range)))
-	       (<= (string-to-number episode) (string-to-number (second episodes-range))))
+	       (<= (string-to-number episode) (string-to-number (cl-second episodes-range))))
       (let* ((scrapped-urls (enime--scrap-embbeded-and-video anime-id episode desired-quality))
 	     (embedded (car scrapped-urls))
-	     (video-url (second scrapped-urls)))
+	     (video-url (cl-second scrapped-urls)))
 	(if (enime--good-video-url-p video-url)
 	    (progn
 	      (enime--start-mpv-playback embedded video-url skip-to)
