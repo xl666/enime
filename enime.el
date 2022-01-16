@@ -819,7 +819,7 @@ Argument ANIME-ID anime of interest."
     (-zip-with (lambda (anime key)
 		 `(,key ,(append (list :key key)
 				 (car (cdr anime)))))
-	       (sort (copy-list
+	       (sort (cl-copy-list
 		      (enime--get-followed-anime-alist))
 		     (lambda (el1 el2) (string< (car el1) (car el2))))
 	       keys)))
