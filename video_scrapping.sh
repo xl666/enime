@@ -62,6 +62,7 @@ get_video_quality() {
 anime_id="$1"
 episode="$2"
 quality="$3"
+dub_prefix="$4"
 
 dpage_link=$(get_dpage_link "$anime_id" "$episode")
 video_url=$(get_video_quality "$dpage_link")

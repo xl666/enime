@@ -29,6 +29,8 @@
 
 ;;; General
 
+(require 'cl-lib)
+(require 'eieio)
 (require 'mpv)
 (require 'transient)
 (require 'dash)
@@ -36,7 +38,7 @@
 (require 'esxml-query)
 
 (defgroup enime nil
-  "Watch anime inside Emacs."
+  "Watch anime using Emacs."
   :group 'apps)
 
 
@@ -375,7 +377,9 @@ Argument NEW-ALIST alist that substitute current db."
 (defun enime--follow-anime (anime-id
 			    current-episode
 			    description
-			    img-src)
+			    img-src
+			    dub
+			    desired-quality)
   "Store new anime to follow.
 Argument ANIME-ID anime of interest
 Argument CURRENT-EPISODE number of episode to save in db.
@@ -399,7 +403,11 @@ Argument IMG-SRC scrapped cover art url."
 		     :consider-finished-left
 		     0
 		     :current-episode-duration
-		     -1))))
+		     -1
+		     :dub
+		     ,dub
+		     :desired-quality
+		     ,desired-quality))))
     (if (and animes (assoc anime-id animes))
 	(message "You're already following this anime")
       (progn
@@ -458,6 +466,9 @@ Argument ANIME-ID anime of interest."
 
 (defvar enime-episode-number 1
   "Selected episode number.")
+
+(defvar enime-dub nil
+  "Prefer dubbed version if available")
 
 (defvar enime-current-anime-key nil
   "Holds last selected key from an anime search.")
@@ -630,15 +641,34 @@ Argument KEY alist key."
 
 
 (transient-define-infix enime--set-desired-quality ()
-  "Sets desired quality of episode, may not be available."
-  :class 'transient-lisp-variable
-  :variable 'enime-desired-quality
-  :description "Desired video quiality"
-  :key "-q"
-  :reader (lambda (&rest _)
-	    (cl-second (read-multiple-choice "Choose quality: "
-					     '((?a "360") (?b "480") (?c " 720") (?d "1080"))))))
+  "Sets desired quality of episode, may not be available." 
+  :class 'transient-lisp-variable 
+  :variable 'enime-desired-quality 
+  :description "Desired video quiality" 
+  :key "-q" 
+  :reader (lambda (&rest _) 
+	    (let ((val (cl-second (read-multiple-choice "Choose quality: " '((?a "360") 
+									     (?b "480") 
+									     (?c " 720") 
+									     (?d "1080")))))) 
+	      (when (enime--is-anime-followed-p enime-current-anime-id) 
+		(enime--update-anime-property-db enime-current-anime-id 
+						 :desired-quality val))
+	      val)))
 
+
+(transient-define-infix enime--set-dub ()
+  "Sets if the dub version is prefered."
+  :class 'transient-lisp-variable
+  :variable 'enime-dub
+  :key "-d"
+  :description "Prefer dubbed version"
+  :reader (lambda (&rest _)
+	    (let ((val (yes-or-no-p "Prefer dubbed version if available?")))
+	      (when (enime--is-anime-followed-p enime-current-anime-id)
+		(enime--update-anime-property-db enime-current-anime-id
+						 :dub val))
+	      val)))
 
 (defun enime--try-play-episode (anime-id episode
 					 desired-quality
@@ -677,7 +707,9 @@ Argument ANIME-ID anime of interest."
 		       (enime--get-anime-description-from-key
 			enime-current-anime-key)
 		       (enime--get-anime-img-url-from-key
-			enime-current-anime-key))
+			enime-current-anime-key)
+		       enime-dub
+		       enime-desired-quality)
   (enime-anime-transient))
 
 
@@ -764,6 +796,7 @@ Argument ANIME-ID anime of interest."
 	  (lambda () (enime--get-anime-description-from-key enime-current-anime-key))
 	  (enime--set-anime-episode)
 	  (enime--set-desired-quality)
+	  (enime--set-dub)
 	  ]
   ["Actions"
    :class transient-row
@@ -808,6 +841,10 @@ Argument ANIME-ID anime of interest."
 				      enime-current-anime-key))
 			       (setq enime-episode-number
 				     1)
+			       (setq enime-dub
+				     nil)
+			       (setq enime-desired-quality
+				     "1080")
                                (enime-anime-transient)))))))
              enime--current-anime-search-results-alist))
 
@@ -856,6 +893,14 @@ Argument ANIME-ID anime of interest."
 				       (enime--get-anime-property
 					enime-current-anime-id
 					:consider-finished-left))
+				 (setq enime-dub
+				       (enime--get-anime-property
+					enime-current-anime-id
+					:dub))
+				 (setq enime-desired-quality
+				       (enime--get-anime-property
+					enime-current-anime-id
+					:desired-quality))
 				 (enime-anime-transient)))))))
 	       anime-alist-prefixes)))
 
