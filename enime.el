@@ -23,7 +23,7 @@
 
 
 ;;; Commentary:
-;; 
+;;
 
 ;;; Code:
 
@@ -315,6 +315,25 @@ Argument VIDEO-URL url to check."
   (if (< (length video-url) 10)
       nil
     (string= "http" (substring video-url 0 4))))
+
+
+;;; video scrapping
+;; this is ugly code, I don't want to but backporting every change to make
+;; video playback working again after so often changes in anime CDN
+;; is becoming a chore, sorry
+
+(defconst enime--base-path (file-name-directory (or load-file-name buffer-file-name)))
+
+(defun enime--scrap-embbeded-and-video (anime-id episode desired-quality)
+  "Run a script to get values for video playback.
+Argument ANIME-ID anime of interest.
+Argument EPISODE episode number.
+Argument DESIRED-QUALITY quality selected by user."
+  (let* ((scrapped-urls (shell-command-to-string (format "%s/%s %s %s %s" enime--base-path
+							 "video_scrapping.sh " anime-id episode
+							 desired-quality)))
+	 (partes (split-string scrapped-urls ";;;")))
+    partes))
 
 ;;; persistence
 
@@ -1009,16 +1028,14 @@ Argument ANIME-ID anime of interest."
   (let ((episodes-range (enime-episodes-range anime-id)))
     (when (and (>= (string-to-number episode) (string-to-number (car episodes-range)))
 	       (<= (string-to-number episode) (string-to-number (second episodes-range))))
-      (let* ((embedded (enime-get-embedded-video-link anime-id episode))
-	     (video-url (enime-get-links embedded desired-quality)))
-	(setq uurl video-url)
+      (let* ((scrapped-urls (enime--scrap-embbeded-and-video anime-id episode desired-quality))
+	     (embedded (car scrapped-urls))
+	     (video-url (second scrapped-urls)))
 	(if (enime--good-video-url-p video-url)
 	    (progn
 	      (enime--start-mpv-playback embedded video-url skip-to)
 	      t)
 	  nil)))))
-
-(provide 'enime)
 
 (provide 'enime)
 
