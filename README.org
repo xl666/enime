@@ -54,11 +54,12 @@ You can obviously install by other means such as straight.
 
 ** Basic usage
 There are two interactive functions for users:
-- enime-main-transient: offers the functionality to search for an
+- =enime-main-transient=: offers the functionality to search for an
   anime and to select a followed anime
-- enime-anime-transient: offers the actions to play, follow/unfollow,
+- =enime-anime-transient=: offers the actions to play, follow/unfollow,
   and configure the last selected anime (from a search or followed
   anime).
+
 
 There are other interactive functions defined but they are part of the
 TUI and they are not intended to be used directly.
@@ -116,3 +117,7 @@ Some variables can be customized:
 
 ** Future work
 - Maybe add episode downloading
+
+  
+** Disclaimer
+This project includes basically the same disclaimer as ani-cli: [[./disclaimer.md][Disclaimer]]
