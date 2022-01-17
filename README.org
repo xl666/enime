@@ -2,7 +2,7 @@
 
 Watch anime using Emacs.
 
-This package is a kind-of elisp re-implementation of [[https://github.com/pystardust/ani-cli][ani-cli]] using the
+This package is a sort-of elisp re-implementation of [[https://github.com/pystardust/ani-cli][ani-cli]] using the
 same video scrapping methods but featuring a [[https://github.com/magit/transient][transient]] based TUI,
 because, subjectively, transient is a better UI than a CLI.
 
@@ -24,20 +24,23 @@ This package is not available in any emacs package repository, but you can manua
 
 **  Emacs package dependencies 
 Enime depends on some packages available on Elpa or Melpa:
-- [[https://github.com/magit/transient][transient]]
 - [[http://elpa.gnu.org/packages/dash.html][dash]]
-- [[https://github.com/magnars/s.el][s.el]]
-- [[https://github.com/tkf/emacs-request][request]]
-- [[https://github.com/kljohann/mpv.el][mpv.el]]
 - [[https://github.com/tali713/esxml][esxml]]
+- [[https://github.com/kljohann/mpv.el][mpv.el]]
+- [[https://github.com/tkf/emacs-request][request]]
+- [[https://github.com/magnars/s.el][s.el]]
+- [[https://github.com/magit/transient][transient]]
 
 ** System dependencies
 - curl
 - mpv
+- openssl (for bypassing url obfuscation )
+- sed
 
 ** Installation steps
 - Install dependencies
 - Clone this repository
+- Check if the cloned script =video_scrapping.sh= has executable permissions
 - Add the new directory to load path (in your init.el):
 #+begin_src emacs-lisp
   (add-to-list 'load-path "enime/path")
@@ -58,7 +61,7 @@ There are two interactive functions for users:
   anime).
 
 There are other interactive functions defined but they are part of the
-TUI and not intended to be used directly.
+TUI and they are not intended to be used directly.
 
 ** Customization
 Some variables can be customized:
@@ -74,7 +77,6 @@ Some variables can be customized:
   requiring enime):
 #+begin_src emacs-lisp
   (setq enime-storage-file "~/enime.db")
-  
 #+end_src
 
 
@@ -104,6 +106,13 @@ Some variables can be customized:
 - You can follow up to 104 animes: I believe this number is already
   impractical as the selection overflows. You can always unfollow an
   anime to make room if necessary
+
+** Troubleshooting
+- =request--curl-sync: semaphore never called=: this error occurs in
+  some systems, you can try changing the Emacs request back-end as
+  follows:
+  + =M-x customize-option RET request-backend=
+  + Change value for: =url-retrieve=
 
 ** Future work
 - Maybe add episode downloading
