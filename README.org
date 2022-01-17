@@ -33,6 +33,7 @@ Enime depends on some packages available on Elpa or Melpa:
 
 ** System dependencies
 - curl
+- grep
 - mpv
 - openssl (for bypassing url obfuscation )
 - sed
