@@ -325,15 +325,17 @@ Argument VIDEO-URL url to check."
 ;; is becoming a chore, sorry
 
 (defconst enime--base-path (file-name-directory (or load-file-name buffer-file-name)))
+(defconst enime--dub-prefix "-dub")
 
-(defun enime--scrap-embbeded-and-video (anime-id episode desired-quality)
+(defun enime--scrap-embbeded-and-video (anime-id episode desired-quality dub-prefix)
   "Run a script to get values for video playback.
 Argument ANIME-ID anime of interest.
 Argument EPISODE episode number.
 Argument DESIRED-QUALITY quality selected by user."
-  (let* ((scrapped-urls (shell-command-to-string (format "%s/%s %s %s %s" enime--base-path
+  (let* ((scrapped-urls (shell-command-to-string (format "%s/%s %s %s %s %s" enime--base-path
 							 "video_scrapping.sh " anime-id episode
-							 desired-quality)))
+							 desired-quality
+							 dub-prefix)))
 	 (partes (split-string scrapped-urls ";;;")))
     partes))
 
@@ -672,6 +674,7 @@ Argument KEY alist key."
 
 (defun enime--try-play-episode (anime-id episode
 					 desired-quality
+					 dub
 					 &optional skip-to)
   "Function for trying to play an EPISODE with posible playback skip.
 Argument ANIME-ID anime of interest."
@@ -680,12 +683,14 @@ Argument ANIME-ID anime of interest."
       (enime-play-episode anime-id
 			  episode
 			  desired-quality
+			  dub
 			  skip-to)
       (progn
-	(enime--update-anime-property-db
-	 enime-current-anime-id
-	 :current-episode
-	 enime-episode-number)
+	(when (enime--is-anime-followed-p enime-current-anime-id)
+	  (enime--update-anime-property-db
+	   enime-current-anime-id
+	   :current-episode
+	   enime-episode-number))
 	(transient-quit-all))
     (message "The episode cannot be retrieved")))
 
@@ -695,7 +700,8 @@ Argument ANIME-ID anime of interest."
   (enime--try-play-episode
    enime-current-anime-id
    (number-to-string enime-episode-number)
-   enime-desired-quality))
+   enime-desired-quality
+   enime-dub))
 
 (defun enime--follow-action ()
   "Action for start following an anime."
@@ -727,6 +733,7 @@ Argument ANIME-ID anime of interest."
        enime-current-anime-id
        (number-to-string enime-episode-number)
        enime-desired-quality
+       enime-dub
        (enime--get-anime-property
 	enime-current-anime-id
 	:time-elapsed)))))
@@ -1015,7 +1022,7 @@ Optional argument SKIP-TO seconds to skip forward."
 	(run-with-timer
 	 2 5
 	 (lambda ()
-	   (message "Video still loading")
+	   (message "Video still loading (you can abort with mpv-kill)")
 	   (when (not (mpv-live-p))
 	     (progn (cancel-timer enime--loading-timer)
 		    (message "Cannot play video")))
@@ -1024,14 +1031,15 @@ Optional argument SKIP-TO seconds to skip forward."
 		   (mpv-get-playback-position)
 		 (error nil))
 	     (progn (cancel-timer enime--loading-timer)
-		    (enime--update-anime-property-db
-		     anime-id
-		     :current-episode-duration
-		     (mpv-get-duration))
 		    (enime--try-to-skip anime-id skip-to)
 		    (message "Enjoy!!!")
-		    (enime--update-anime-data-while-playing
-		     anime-id)))))))
+		    (when (enime--is-anime-followed-p anime-id)
+		      (enime--update-anime-property-db
+		       anime-id
+		       :current-episode-duration
+		       (mpv-get-duration))
+		      (enime--update-anime-data-while-playing
+		       anime-id))))))))
 
 (defun enime--try-to-skip (anime-id &optional skip-to)
   "Skips opening or skips to continue playing.
@@ -1067,13 +1075,14 @@ Argument ANIME-ID anime of interest."
 
 
 (defun enime-play-episode (anime-id episode
-				    desired-quality &optional skip-to)
+				    desired-quality dub &optional skip-to)
   "Opens an anime EPISODE in mpv.
 Argument ANIME-ID anime of interest."
   (let ((episodes-range (enime-episodes-range anime-id)))
     (when (and (>= (string-to-number episode) (string-to-number (car episodes-range)))
 	       (<= (string-to-number episode) (string-to-number (cl-second episodes-range))))
-      (let* ((scrapped-urls (enime--scrap-embbeded-and-video anime-id episode desired-quality))
+      (let* ((dub-prefix (if dub  enime--dub-prefix ""))
+	     (scrapped-urls (enime--scrap-embbeded-and-video anime-id episode desired-quality dub-prefix))
 	     (embedded (car scrapped-urls))
 	     (video-url (cl-second scrapped-urls)))
 	(if (enime--good-video-url-p video-url)

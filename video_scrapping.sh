@@ -1,4 +1,5 @@
 #!/bin/sh
+
 base_url=$(curl -s -L -o /dev/null -w "%{url_effective}\n" https://gogoanime.cm)
 
 get_dpage_link() {
