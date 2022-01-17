@@ -30,7 +30,7 @@
 ;;; General
 
 (require 'cl-lib)
-(require 'eieio)
+(require 'eieio-base)
 (require 'mpv)
 (require 'transient)
 (require 'dash)
