@@ -195,25 +195,27 @@ a candidate is a list of id title img-src"
     ;;   (append candidates-fist-page (enime--collect-candidates-search-anime-pages url pages name)))
     ))
 
-(defun enime-get-min-episode (tree)
+(defun enime-get-min-episode (anime-id)
   "Return the first episode found from a parse treee.
 Argument TREE parsing tree."
-  (xml-get-attribute (car (esxml-query-all "#episode_page li a" tree)) 'ep_start))
+  "1")
 
-(defun enime-get-max-episode (tree)
+(defun enime-get-max-episode (anime-id)
   "Return the last episode found from a parse treee.
 Argument TREE parsing tree."
-  (xml-get-attribute (car (last (esxml-query-all "#episode_page li a" tree))) 'ep_end))
+  (let* ((myjson
+	  (enime-return-raw-text-from-request
+	   (concat
+	    "https://gogoanime.is/ajax/movie/episodes/"
+	    (car (last (split-string anime-id "-"))))))
+	 )
+    (substring (car (last (split-string myjson ":"))) 0 -1)))
 
 (defun enime-episodes-range (anime-id)
   "Return a numeric range (inclusive in both sides) of first and last episodes.
 Argument ANIME-ID anime of interest."
-  (let* ((uri (concat "/category/" anime-id))
-	 (url (concat enime-base-url uri))
-	 (tree
-	  (enime-return-parsing-tree-from-request url nil))
-	 (first-ep (enime-get-min-episode tree))
-	 (last-ep (enime-get-max-episode tree)))
+  (let* ((first-ep (enime-get-min-episode anime-id))
+	 (last-ep (enime-get-max-episode anime-id)))
     (if (= (string-to-number first-ep) 0)
 	`("1" ,last-ep)
       `(,first-ep ,last-ep))))
