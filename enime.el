@@ -812,6 +812,10 @@ Argument ANIME-ID anime of interest."
     :if (lambda ()
 	  (not (enime--is-anime-followed-p
 		enime-current-anime-id))))
+   ("c" "Continue watching" enime--continue-action
+    :if (lambda ()
+	  (enime--is-anime-followed-p
+	   enime-current-anime-id)))
    ("p" "Play epidose from start" enime--play-episode-action)
    ("d" "Show anime details" enime--show-details-action)
    ("m" "Return to main menu" enime-main-transient)
@@ -826,7 +830,7 @@ Argument ANIME-ID anime of interest."
 	 (enime--is-anime-followed-p
 	  enime-current-anime-id))
    ("u" "Unfollow anime" enime--unfollow-action)
-   ("c" "Continue watching" enime--continue-action)
+   
    (enime--set-skip-opening-time)
    (enime--set-finished-at-seconds-left)
    ])
