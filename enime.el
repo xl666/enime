@@ -42,7 +42,8 @@
   :group 'apps)
 
 
-(defcustom enime-base-url "https://www3.gogoanime.cm/"
+(defcustom enime-base-url (s-trim (shell-command-to-string
+				   "curl -s -L -o /dev/null -w \"%{url_effective}\n\" https://gogoanime.cm"))
   "Gogo anime base url."
   :group 'enime
   :type 'string)

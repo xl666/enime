@@ -50,7 +50,6 @@ get_video_quality() {
 	*)
 	    video_link=$(printf '%s' "$video_links" | grep -i "${quality}p" | head -n 1)
 	    if [ -z "$video_link" ]; then
-		err "Current video quality is not available (defaulting to best quality)"
 		quality=best
 		video_link=$(printf '%s' "$video_links" | head -n 4 | tail -n 1)
 	    fi
