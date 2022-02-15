@@ -42,7 +42,7 @@
   :group 'apps)
 
 
-(defcustom enime-base-url "https://gogoanime.is/"
+(defcustom enime-base-url "https://www3.gogoanime.cm/"
   "Gogo anime base url."
   :group 'enime
   :type 'string)
@@ -95,22 +95,17 @@ Optional argument PARAMS GET variables."
 
 (defun enime-get-anime-title-from-node (node)
   "Return the anime title from a NODE."
-  (let* ((element (esxml-query ".anime-name>a" node))
-	 (href (xml-get-attribute element 'title)))
-    (car (last (split-string href "/")))))
+  (xml-get-attribute node 'title))
 
 (defun enime-get-anime-id-from-node (node)
   "Return the anime id from NODE."
-  (let* ((element (esxml-query ".anime-name>a" node))
-	 (href (xml-get-attribute element 'href)))
+  (let ((href (xml-get-attribute node 'href)))
     (car (last (split-string href "/")))))
 
 (defun enime-get-anime-img-src-from-node (node)
   "Return the image src value for an anime.
 Argument NODE node from a parsing tree."
-  (let* ((element (esxml-query "img" node))
-	 (src (xml-get-attribute element 'src)))
-    src))
+  (xml-get-attribute (esxml-query "img" node) 'src))
 
 (defun enime--extract-text-description-rec (&optional current-list)
   "Return a string containing the text of a node element.
@@ -164,8 +159,7 @@ Argument TREE parsing tree."
 	    `(,(enime-get-anime-id-from-node node)
 	      ,(enime-get-anime-title-from-node node)
 	      ,(enime-get-anime-img-src-from-node node)))
-	  (esxml-query-all "div.anime_list-grid>div.item"
-			   tree)))
+	  (esxml-query-all "div>a[href^=\"/category/\"]" tree)))
 
 (defun enime--collect-candidates-search-anime-pages (base-url pages name)
   "Concatenates result candidates from all PAGES of a search anime.
@@ -183,17 +177,15 @@ Argument BASE-URL url for scrapping."
 Returns a list of candidates
 a candidate is a list of id title img-src"
   (let* ((name (enime-normalize-search-string anime-name))
-	 (uri "search")
+	 (uri "/search.html")
 	 (url (concat enime-base-url uri))
 	 (tree
 	  (enime-return-parsing-tree-from-request url `(("keyword" . ,name))))
 	 (pages (enime--pages-search-anime tree))
 	 (candidates-fist-page (enime--process-candites-search-anime-page tree)))
-    candidates-fist-page
-    ;; (if (= 0 pages)
-    ;; 	candidates-fist-page
-    ;;   (append candidates-fist-page (enime--collect-candidates-search-anime-pages url pages name)))
-    ))
+    (if (= 0 pages)
+	candidates-fist-page
+      (append candidates-fist-page (enime--collect-candidates-search-anime-pages url pages name)))))
 
 (defun enime-get-min-episode (tree)
   "Return the first episode found from a parse treee.
