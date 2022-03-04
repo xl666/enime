@@ -4,35 +4,33 @@ base_url=$(curl -s -L -o /dev/null -w "%{url_effective}\n" https://gogoanime.cm)
 
 get_dpage_link() {
     # get the download page url
-    anime_id=$1
-    ep_no=$2
-
-    # credits to fork: https://github.com/Dink4n/ani-cli for the fix
-    # dub prefix takes the value "-dub" when dub is needed else is empty
-    anime_page=$(curl -s "$base_url/$anime_id${dub_prefix}-$ep_no")
-
-    if printf '%s' "$anime_page" | grep -q "404" ; then
-	anime_page=$(curl -s "$base_url/$anime_id${dub_prefix}-episode-$ep_no")
-    fi
-
+    anime_id="$1"
+    ep_no="$2"
+    # credits to fork: https://github.com/Dink4n/ani-cli for the fix 
+    for params in "-episode-$ep_no" "-$ep_no" "-episode-$ep_no-1" "-camrip-episode-$ep_no"; do
+	anime_page=$(curl -s "$base_url/$anime_id$params")
+	printf '%s' "$anime_page" | grep -q '<h1 class="entry-title">404</h1>' || break
+    done
     printf '%s' "$anime_page" |
-	sed -n -E 's/^[[:space:]]*<a href="#" rel="100" data-video="([^"]*)".*/\1/p' |
-	sed 's/^/https:/g'
+	sed -n -E 's/.*class="active" rel="1" data-video="([^"]*)".*/\1/p' | sed 's/^/https:/g'
 }
 
 decrypt_link() {
-    ajax_url='https://gogoplay.io/encrypt-ajax.php'
+    secret_key='3235373136353338353232393338333936313634363632323738383333323838'
+    iv='31323835363732393835323338333933'
+    ajax_url="https://gogoplay4.com/encrypt-ajax.php"
+    crypto_data=$(curl -s "$1" | sed -nE 's/.*data-value="([^"]*)".*/\1/p')
+    id=$(printf '%s' "$crypto_data" | base64 -d | openssl enc -d -aes256 -K "$secret_key" -iv "$iv" | cut -d '&' -f1)
 
-    #get the id from the url
-    video_id=$(printf "$1" | cut -d\? -f2 | cut -d\& -f1 | sed 's/id=//g')
+    #encrypt and create the final ajax
+    ajax=$(printf "%s\010\016\003\010\t\003\004\t" "$id" | openssl enc -aes256 -K "$secret_key" -iv "$iv" -a)
+
+    #send request and get the data(most lamest way)
+    data=$(curl -s -H "X-Requested-With:XMLHttpRequest" "$ajax_url" -d "id=$ajax" | sed -e 's/{"data":"//' -e 's/"}/\n/' -e 's/\\//g')
     
-    #construct ajax parameters
-    secret_key='3235373436353338353932393338333936373634363632383739383333323838'
-    iv='34323036393133333738303038313335'
-    ajax=$(printf "$video_id" | openssl enc -aes256  -K "$secret_key" -iv "$iv" -a)
-    
-    #send the request to the ajax url
-    curl -s -H 'x-requested-with:XMLHttpRequest' "$ajax_url" -d "id=$ajax" -d "time=69420691337800813569" | tr '"' '\n' | sed -n -E 's/.*cdn.*/\0/p' | sed 's/\\//g' 
+    #decrypt the data to get final links
+    printf '%s' "$data" | base64 -d | openssl enc -d -aes256 -K "$secret_key" -iv "$iv" | sed -e 's/\].*/\]/' -e 's/\\//g' |
+	grep -Eo 'https:\/\/[-a-zA-Z0-9@:%._\+~#=][a-zA-Z0-9][-a-zA-Z0-9@:%_\+.~#?&\/\/=]*'
 }
 
 get_video_quality() {
