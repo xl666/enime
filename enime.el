@@ -36,6 +36,7 @@
 (require 'dash)
 (require 'request)
 (require 'esxml-query)
+(require 's)
 
 (defgroup enime nil
   "Watch anime using Emacs."
