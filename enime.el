@@ -1088,7 +1088,7 @@ Argument ANIME-ID anime of interest."
     (when (and (>= (string-to-number episode) (string-to-number (car episodes-range)))
 	       (<= (string-to-number episode) (string-to-number (cl-second episodes-range))))
       (let* ((dub-prefix (if dub  enime--dub-prefix ""))
-	     (scrapped-urls (enime--scrap-embbeded-and-video (concat anime-id "-episode-")
+	     (scrapped-urls (enime--scrap-embbeded-and-video anime-id
 							     episode desired-quality dub-prefix))
 	     (embedded (car scrapped-urls))
 	     (video-url (cl-second scrapped-urls)))
