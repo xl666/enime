@@ -1026,7 +1026,7 @@ Argument ANIME-ID anime of interest.
 Optional argument SKIP-TO seconds to skip forward."
   (setq enime--loading-timer
 	(run-with-timer
-	 2 5
+	 2 15
 	 (lambda ()
 	   (message "Video still loading (you can abort with mpv-kill)")
 	   (when (not (mpv-live-p))
